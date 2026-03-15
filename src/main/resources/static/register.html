@@ -2,22 +2,24 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Register</title>
-    <link rel="icon" href="data:,"> <!-- Favicon isteklerini engelle -->
+    <title>Kayıt Ol - Kitaphanem</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <div class="container">
-    <h2>Kayıt Ol</h2>
+    <h2>📚 Kayıt Ol</h2>
     <form id="registerForm">
         <input type="text" id="regUsername" placeholder="Kullanıcı Adı" required>
         <input type="password" id="regPassword" placeholder="Şifre" required>
         <input type="text" id="fullName" placeholder="Ad Soyad" required>
-        <input type="text" id="phoneNumber" placeholder="Telefon" required>
-        <input type="email" id="email" placeholder="Email" required>
+        <input type="tel" id="phoneNumber" placeholder="Telefon" required>
+        <input type="email" id="email" placeholder="E-posta" required>
         <button type="submit">Kayıt Ol</button>
     </form>
-    <p>Zaten hesabın var mı? <a href="/login.html">Giriş Yap</a></p>
+    <p style="text-align: center; margin-top: 20px;">
+        Zaten hesabın var mı? <a href="/login.html">Giriş Yap</a>
+    </p>
 </div>
 <script src="/js/app.js"></script>
 </body>

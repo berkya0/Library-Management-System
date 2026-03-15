@@ -1,32 +1,52 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Token kontrolü
-    const token = localStorage.getItem("token");
-    if (token && isTokenExpired(token)) {
-        logout();
-    }
+    console.log("App.js loaded");
 
     // Login Form
     const loginForm = document.getElementById("loginForm");
     if (loginForm) {
         loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
+            const username = document.getElementById("username")?.value.trim();
+            const password = document.getElementById("password")?.value;
+
+            if (!username || !password) {
+                alert("Kullanıcı adı ve şifre boş olamaz!");
+                return;
+            }
+
             try {
                 const response = await fetch("/rest/api/authenticate", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        username: document.getElementById("username").value,
-                        password: document.getElementById("password").value
-                    })
+                    body: JSON.stringify({ username, password })
                 });
 
-                const data = await handleResponse(response);
-                if (data) {
-                    saveAuthData(data.payload);
-                    window.location.href = "/dashboard.html";
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.errorMessage || `Giriş başarısız! (${response.status})`);
                 }
+
+                const data = await response.json();
+                // Beklenen yapı: { accessToken, refreshToken, username, role, memberId } (direkt olarak)
+                // Eğer data.payload varsa, onu kullan
+                const payload = data.payload || data;
+
+                if (!payload.accessToken || !payload.refreshToken) {
+                    throw new Error("Sunucudan geçersiz yanıt alındı.");
+                }
+
+                localStorage.setItem("token", payload.accessToken);
+                localStorage.setItem("refreshToken", payload.refreshToken);
+                localStorage.setItem("user", JSON.stringify({
+                    username: payload.username,
+                    role: payload.role,
+                    memberId: payload.memberId
+                }));
+
+                window.location.href = "/dashboard.html";
             } catch (err) {
-                showError("Giriş başarısız: " + err.message);
+                console.error("Login hatası:", err);
+                alert("Giriş başarısız: " + err.message);
             }
         });
     }
@@ -36,64 +56,41 @@ document.addEventListener("DOMContentLoaded", () => {
     if (registerForm) {
         registerForm.addEventListener("submit", async (e) => {
             e.preventDefault();
+
+            const formData = {
+                username: document.getElementById("regUsername")?.value.trim(),
+                password: document.getElementById("regPassword")?.value,
+                fullName: document.getElementById("fullName")?.value.trim(),
+                email: document.getElementById("email")?.value.trim(),
+                phoneNumber: document.getElementById("phoneNumber")?.value.trim()
+            };
+
+            for (let [key, value] of Object.entries(formData)) {
+                if (!value) {
+                    alert("Lütfen tüm alanları doldurun!");
+                    return;
+                }
+            }
+
             try {
                 const response = await fetch("/rest/api/user/register", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        username: document.getElementById("regUsername").value,
-                        password: document.getElementById("regPassword").value,
-                        fullName: document.getElementById("fullName").value,
-                        email: document.getElementById("email").value,
-                        phoneNumber: document.getElementById("phoneNumber").value
-                    })
+                    body: JSON.stringify(formData)
                 });
 
-                const data = await handleResponse(response);
-                if (data) {
-                    alert("Kayıt başarılı! Giriş yapabilirsiniz.");
-                    window.location.href = "/login.html";
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.errorMessage || `Kayıt başarısız! (${response.status})`);
                 }
+
+                // Başarılı kayıt
+                alert("Kayıt başarılı! Giriş yapabilirsiniz.");
+                window.location.href = "/login.html";
             } catch (err) {
-                showError("Kayıt başarısız: " + err.message);
+                console.error("Register hatası:", err);
+                alert("Kayıt başarısız: " + err.message);
             }
         });
-    }
-
-    // Yardımcı Fonksiyonlar
-    function saveAuthData(authData) {
-        localStorage.setItem("token", authData.accessToken);
-        localStorage.setItem("refreshToken", authData.refreshToken);
-        localStorage.setItem("user", JSON.stringify({
-            username: authData.username,
-            role: authData.role
-        }));
-    }
-
-    async function handleResponse(response) {
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.errorMessage || `HTTP error! status: ${response.status}`);
-        }
-        return data;
-    }
-
-    function isTokenExpired(token) {
-        try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            return payload.exp * 1000 < Date.now();
-        } catch (e) {
-            return true;
-        }
-    }
-
-    function logout() {
-        localStorage.clear();
-        window.location.href = "/login.html";
-    }
-
-    function showError(message) {
-        console.error(message);
-        alert(message);
     }
 });

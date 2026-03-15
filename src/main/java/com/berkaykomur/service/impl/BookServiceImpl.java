@@ -1,14 +1,5 @@
 package com.berkaykomur.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Service;
-
 import com.berkaykomur.dto.DtoBook;
 import com.berkaykomur.dto.DtoBookIU;
 import com.berkaykomur.exception.BaseException;
@@ -18,14 +9,26 @@ import com.berkaykomur.model.Book;
 import com.berkaykomur.repository.BookRepository;
 import com.berkaykomur.repository.LoanRepository;
 import com.berkaykomur.service.IBookService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 
 @Service
+@RequiredArgsConstructor
 public class BookServiceImpl implements IBookService{
-    @Autowired
-    private BookRepository bookRepository;
+
+    private final BookRepository bookRepository;
+    private final LoanRepository loanRepository;
+
     @Override
+    @Transactional(readOnly=true)
     public List<DtoBook> findAllBooks() {
         List<Book> allBook = bookRepository.findAll();
         List<DtoBook> dtoList=new ArrayList<>();
@@ -48,6 +51,8 @@ public class BookServiceImpl implements IBookService{
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public DtoBook saveBook(DtoBookIU dtoBookIU) {
         Book book = new Book();
         book.setTitle(dtoBookIU.getTitle());
@@ -60,8 +65,7 @@ public class BookServiceImpl implements IBookService{
         BeanUtils.copyProperties(book, dtoBook);
         return dtoBook;
     }
-    @Autowired
-    private LoanRepository loanRepository;
+
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")

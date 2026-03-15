@@ -1,17 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // ========== DEĞİŞKENLER ==========
     const token = localStorage.getItem('token');
-    const userData = JSON.parse(localStorage.getItem('user'));
-	const memberSearch = document.getElementById('memberSearch');
-	   const filterRole = document.getElementById('filterRole');
-	  
-    
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const apiBaseUrl = '/rest/api';
+
+    // Token kontrolü
     if (!token || isTokenExpired(token)) {
         logout();
         return;
     }
-	
 
-    const apiBaseUrl = '/rest/api';
+    // DOM elementleri
+    const memberSearch = document.getElementById('memberSearch');
+    const filterRole = document.getElementById('filterRole');
     const bookForm = document.getElementById('addBookForm');
     const bookTableBody = document.querySelector('#bookTable tbody');
     const memberTableBody = document.querySelector('#memberTable tbody');
@@ -20,193 +21,341 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabContents = document.querySelectorAll('.tab-content');
     const membersTabBtn = document.querySelector('[data-tab="members"]');
     const allLoansTabBtn = document.querySelector('[data-tab="all-loans"]');
-	const editProfileBtn = document.getElementById('editProfileBtn');
-	const myLoansSearch = document.getElementById('myLoansSearch');
-	  if (myLoansSearch) {
-	      myLoansSearch.addEventListener('input', filterMyLoans);
-	  }
-	   if (editProfileBtn) {
-	       editProfileBtn.addEventListener('click', openProfileEditModal);
-	   }
-	   const loanSearch = document.getElementById('loanSearch');
-	   const filterStatus = document.getElementById('filterStatus');
-	   let allLoans = [];
-    
-    const jwtService = {
-        extractMemberId: function(token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                return payload.memberId || null;
-            } catch (e) {
-                return null;
-            }
-        }
-    };
-	if (loanSearch && filterStatus) {
-	    loanSearch.addEventListener('input', filterLoans);
-	    filterStatus.addEventListener('change', filterLoans);
-	}
-	
-	if (memberSearch && filterRole) {
-	       // Arama ve filtreleme fonksiyonları
-	       function filterMembers() {
-	           const searchText = memberSearch.value.toLowerCase();
-	           const roleValue = filterRole.value;
-	           
-	           const rows = document.querySelectorAll('#memberTable tbody tr');
-	           
-	           rows.forEach(row => {
-	               const name = row.cells[1].textContent.toLowerCase();
-	               const email = row.cells[2].textContent.toLowerCase();
-	               const phone = row.cells[3].textContent.toLowerCase();
-	               const role = row.cells[5].textContent;
-	               
-	               const matchesSearch = name.includes(searchText) || 
-	                                   email.includes(searchText) || 
-	                                   phone.includes(searchText);
-	               const matchesRole = roleValue === '' || role === roleValue;
-	               
-	               row.style.display = (matchesSearch && matchesRole) ? '' : 'none';
-	           });
-	       }
-		 }
-		 memberSearch.addEventListener('input', filterMembers);
-		        filterRole.addEventListener('change', filterMembers);
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const myLoansSearch = document.getElementById('myLoansSearch');
+    const loanSearch = document.getElementById('loanSearch');
+    const filterStatus = document.getElementById('filterStatus');
+    const bookSearch = document.getElementById('bookSearch');
+    const searchCategory = document.getElementById('searchCategory');
 
-    // Admin değilse kitap ekleme formunu ve admin sekmelerini gizle
-    if (userData.role !== 'ADMIN') {
-        bookForm?.remove();
-        membersTabBtn?.remove();
-        allLoansTabBtn?.remove();
+    // Veri depolama
+    let allBooks = [];
+    let allLoans = [];
+    let myLoans = [];
+
+    // ========== YARDIMCI FONKSİYONLAR ==========
+    function isTokenExpired(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.exp * 1000 < Date.now();
+        } catch (e) {
+            return true;
+        }
     }
 
-    // Sekme geçişleri
+    function logout() {
+        localStorage.clear();
+        window.location.href = '/login.html';
+    }
+
+    async function apiFetch(endpoint, options = {}) {
+        const url = endpoint.startsWith('http') ? endpoint : `${apiBaseUrl}${endpoint}`;
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+            ...options.headers
+        };
+
+        const response = await fetch(url, { ...options, headers });
+        return handleResponse(response);
+    }
+
+    async function handleResponse(response) {
+        if (!response.ok) {
+            let errorMessage = `HTTP error! status: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.errorMessage || errorData.message || errorMessage;
+            } catch (e) {
+                // ignore
+            }
+            throw new Error(errorMessage);
+        }
+        // 204 No Content için boş dönebilir
+        if (response.status === 204) {
+            return null;
+        }
+        const data = await response.json();
+        // Eğer response bir obje ve "payload" alanı varsa onu döndür, yoksa direkt data
+        return data && typeof data === 'object' && 'payload' in data ? data.payload : data;
+    }
+
+    function showLoading(show) {
+        let loader = document.getElementById('loadingSpinner');
+        if (!loader) {
+            loader = document.createElement('div');
+            loader.id = 'loadingSpinner';
+            loader.style.cssText = `
+                display: none;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                padding: 20px;
+                background: rgba(0,0,0,0.8);
+                color: white;
+                border-radius: 10px;
+                z-index: 9999;
+            `;
+            loader.textContent = 'Yükleniyor...';
+            document.body.appendChild(loader);
+        }
+        loader.style.display = show ? 'block' : 'none';
+    }
+
+    function showSuccess(message) {
+        alert('✓ ' + message);
+    }
+
+    function showError(message) {
+        console.error(message);
+        alert('❌ ' + message);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('tr-TR', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+        } catch (e) {
+            return dateString;
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return text;
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ========== YETKİ KONTROLÜ ==========
+    if (userData.role !== 'ADMIN') {
+        if (bookForm) bookForm.style.display = 'none';
+        if (membersTabBtn) membersTabBtn.style.display = 'none';
+        if (allLoansTabBtn) allLoansTabBtn.style.display = 'none';
+    }
+
+    // ========== SEKMELER ==========
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const tabId = button.getAttribute('data-tab');
-            
+
             tabButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            
+
             tabContents.forEach(content => content.classList.remove('active'));
-            document.getElementById(`${tabId}-tab`).classList.add('active');
-            
-            // Sekmeye özel yükleme işlemleri
+            const targetTab = document.getElementById(`${tabId}-tab`);
+            if (targetTab) targetTab.classList.add('active');
+
             switch(tabId) {
-                case 'profile':
-                    loadProfile();
-                    break;
-                case 'books':
-                    loadBooks();
-                    break;
-                case 'members':
-                    loadMembers();
-                    break;
-                case 'all-loans':
-                    loadAllLoans();
-                    break;
+                case 'profile': loadProfile(); break;
+                case 'books': loadBooks(); break;
+                case 'members': if (userData.role === 'ADMIN') loadMembers(); break;
+                case 'all-loans': if (userData.role === 'ADMIN') loadAllLoans(); break;
             }
         });
     });
 
-    // İlk yükleme
-    loadProfile();
-    
+    // ========== EVENT LİSTENERLAR ==========
     if (bookForm) {
-        bookForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            saveBook();
-        });
+        bookForm.addEventListener('submit', saveBook);
     }
-    
     if (logoutBtn) {
         logoutBtn.addEventListener('click', logout);
     }
-    
-	let allBooks = [];
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', openProfileEditModal);
+    }
+    if (bookSearch) {
+        bookSearch.addEventListener('input', filterBooks);
+    }
+    if (searchCategory) {
+        searchCategory.addEventListener('change', filterBooks);
+    }
+    if (memberSearch) {
+        memberSearch.addEventListener('input', filterMembers);
+    }
+    if (filterRole) {
+        filterRole.addEventListener('change', filterMembers);
+    }
+    if (loanSearch) {
+        loanSearch.addEventListener('input', filterLoans);
+    }
+    if (filterStatus) {
+        filterStatus.addEventListener('change', filterLoans);
+    }
+    if (myLoansSearch) {
+        myLoansSearch.addEventListener('input', filterMyLoans);
+    }
 
-	async function loadBooks() {
-	    try {
-	        showLoading(true);
-	        const response = await fetch(`${apiBaseUrl}/book/get/list`, {
-	            headers: {
-	                'Authorization': `Bearer ${token}`,
-	                'Content-Type': 'application/json'
-	            }
-	        });
-	        
-	        const result = await handleResponse(response);
-	        
-	        if (result && result.payload) {
-	            allBooks = result.payload;
-	            renderBooks(allBooks);
-	            // Kitaplar yüklendikten sonra aramayı sıfırla
-	            resetSearch();
-	        }
-	    } catch (error) {
-	        showError('Kitaplar yüklenirken hata oluştu: ' + error.message);
-	    } finally {
-	        showLoading(false);
-	    }
-	}
-	//bookSearch çubuğu
-	document.getElementById('bookSearch')?.addEventListener('input', function(e) {
-	    filterBooks();
-	});
+    // İlk yükleme
+    loadProfile();
 
-	document.getElementById('searchCategory')?.addEventListener('change', function(e) {
-	    filterBooks();
-	});
-	
-	function filterBooks() {
-	    const searchTerm = document.getElementById('bookSearch').value.toLowerCase();
-	    const categoryFilter = document.getElementById('searchCategory').value;
-	    const rows = document.querySelectorAll('#bookTable tbody tr');
-	    
-	    rows.forEach(row => {
-	        const bookTitle = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-	        const bookAuthor = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-	        const bookCategory = row.querySelector('td:nth-child(4)').textContent.toUpperCase();
-	        const bookIsbn = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
-	        
-	        // Arama terimi herhangi bir alanda eşleşiyor mu?
-	        const matchesSearch = searchTerm === '' || 
-	                            bookTitle.includes(searchTerm) ||
-	                            bookAuthor.includes(searchTerm) ||
-	                            bookCategory.includes(searchTerm) ||
-	                            bookIsbn.includes(searchTerm);
-	        
-	        // Kategori filtresi eşleşiyor mu?
-	        const matchesCategory = categoryFilter === '' || bookCategory === categoryFilter;
-	        
-	        if (matchesSearch && matchesCategory) {
-	            row.style.display = '';
-	        } else {
-	            row.style.display = 'none';
-	        }
-	    });
-	}
-	function resetSearch() {
-	    document.getElementById('bookSearch').value = '';
-	    document.getElementById('searchCategory').value = '';
-	    filterBooks();
-	}
-    
-    async function loadMembers() {
+    // ========== KİTAP FONKSİYONLARI ==========
+    async function loadBooks() {
         try {
             showLoading(true);
-            const response = await fetch(`${apiBaseUrl}/member/get/list`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+            allBooks = await apiFetch('/book/get/list') || [];
+            renderBooks(allBooks);
+        } catch (error) {
+            showError('Kitaplar yüklenirken hata oluştu: ' + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function filterBooks() {
+        const searchTerm = bookSearch?.value.toLowerCase() || '';
+        const categoryFilter = searchCategory?.value || '';
+        const rows = document.querySelectorAll('#bookTable tbody tr');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            if (row.cells.length < 6) return;
+            const title = row.cells[1]?.textContent.toLowerCase() || '';
+            const author = row.cells[2]?.textContent.toLowerCase() || '';
+            const category = row.cells[3]?.textContent.toUpperCase() || '';
+            const isbn = row.cells[4]?.textContent.toLowerCase() || '';
+
+            const matchesSearch = searchTerm === '' || title.includes(searchTerm) || author.includes(searchTerm) || isbn.includes(searchTerm);
+            const matchesCategory = categoryFilter === '' || category === categoryFilter;
+
+            row.style.display = (matchesSearch && matchesCategory) ? '' : 'none';
+            if (matchesSearch && matchesCategory) visibleCount++;
+        });
+
+        updateBookSearchResultsCount(visibleCount);
+    }
+
+    function updateBookSearchResultsCount(visibleCount) {
+        const totalCount = allBooks.length;
+        const searchHeader = document.querySelector('#books-tab h3');
+        if (searchHeader) {
+            searchHeader.innerHTML = `Kitap Listesi <span style="font-size:14px;color:#666;margin-left:10px;">(${visibleCount}/${totalCount} kitap)</span>`;
+        }
+    }
+
+    function renderBooks(books) {
+        if (!bookTableBody) return;
+        bookTableBody.innerHTML = '';
+
+        if (!books || books.length === 0) {
+            bookTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Kitap bulunamadı.</td></tr>';
+            return;
+        }
+
+        books.forEach(book => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${book.id || '-'}</td>
+                <td>${escapeHtml(book.title || '-')}</td>
+                <td>${escapeHtml(book.author || '-')}</td>
+                <td>${book.category || '-'}</td>
+                <td>${book.isbnNo || '-'}</td>
+                <td>${book.available ? 'Evet' : 'Hayır'}</td>
+                <td>
+                    ${userData.role === 'ADMIN' ? `<button class="btn-delete" data-id="${book.id}">Sil</button>` : ''}
+                    ${book.available ? `<button class="btn-borrow" data-id="${book.id}">Ödünç Al</button>` : '-'}
+                </td>
+            `;
+            bookTableBody.appendChild(row);
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => deleteBook(btn.dataset.id));
+        });
+        document.querySelectorAll('.btn-borrow').forEach(btn => {
+            btn.addEventListener('click', () => borrowBook(btn.dataset.id));
+        });
+    }
+
+    async function saveBook(e) {
+        e.preventDefault();
+        const formData = {
+            title: document.getElementById('bookTitle')?.value.trim(),
+            author: document.getElementById('bookAuthor')?.value.trim(),
+            category: document.getElementById('bookCategory')?.value,
+            isbnNo: document.getElementById('bookIsbn')?.value.trim()
+        };
+
+        if (!formData.title || !formData.author || !formData.category || !formData.isbnNo) {
+            showError('Lütfen tüm alanları doldurun.');
+            return;
+        }
+
+        try {
+            showLoading(true);
+            await apiFetch('/book/save', {
+                method: 'POST',
+                body: JSON.stringify(formData)
             });
-            
-            const result = await handleResponse(response);
-            
-            if (result && result.payload) {
-                renderMembers(result.payload);
+            showSuccess('Kitap başarıyla eklendi!');
+            bookForm.reset();
+            loadBooks();
+        } catch (error) {
+            showError('Kitap eklenirken hata oluştu: ' + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function deleteBook(bookId) {
+        if (!confirm('Bu kitabı silmek istediğinize emin misiniz?')) return;
+        try {
+            showLoading(true);
+            await apiFetch(`/book/delete/${bookId}`, { method: 'DELETE' });
+            showSuccess('Kitap silindi!');
+            loadBooks();
+        } catch (error) {
+            showError('Kitap silinirken hata oluştu: ' + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function borrowBook(bookId) {
+        if (!confirm('Bu kitabı ödünç almak istediğinize emin misiniz?')) return;
+
+        let memberId = userData.memberId;
+        if (!memberId) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                memberId = payload.memberId;
+            } catch (e) {
+                // ignore
             }
+        }
+        if (!memberId) {
+            showError('Üye bilgileriniz eksik. Lütfen tekrar giriş yapın.');
+            return;
+        }
+
+        try {
+            showLoading(true);
+            await apiFetch('/loan/borrow', {
+                method: 'POST',
+                body: JSON.stringify({ bookId: parseInt(bookId), memberId: parseInt(memberId) })
+            });
+            showSuccess('Kitap ödünç alındı!');
+            loadBooks();
+            loadProfile();
+        } catch (error) {
+            showError('Ödünç alma hatası: ' + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // ========== ÜYE FONKSİYONLARI ==========
+    async function loadMembers() {
+        if (userData.role !== 'ADMIN') return;
+        try {
+            showLoading(true);
+            const members = await apiFetch('/member/get/list') || [];
+            renderMembers(members);
         } catch (error) {
             showError('Üyeler yüklenirken hata oluştu: ' + error.message);
         } finally {
@@ -214,298 +363,90 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-	async function loadAllLoans() {
-	    try {
-	        showLoading(true);
-	        const response = await fetch(`${apiBaseUrl}/loan/all`, {
-	            headers: {
-	                'Authorization': `Bearer ${token}`,
-	                'Content-Type': 'application/json'
-	            }
-	        });
-	        
-	        const result = await handleResponse(response);
-	        
-	        if (result && result.payload) {
-	            allLoans = result.payload;
-	            renderAllLoans(allLoans);
-	        }
-	    } catch (error) {
-	        showError('Ödünç listesi yüklenirken hata oluştu: ' + error.message);
-	    } finally {
-	        showLoading(false);
-	    }
-	}
-	function filterLoans() {
-	    const searchTerm = loanSearch.value.toLowerCase();
-	    const statusFilter = filterStatus.value;
-	    const rows = document.querySelectorAll('#allLoansTable tbody tr');
-	    
-	    rows.forEach(row => {
-	        const memberName = row.cells[0].textContent.toLowerCase();
-	        const bookTitle = row.cells[1].textContent.toLowerCase();
-	        const bookAuthor = row.cells[2].textContent.toLowerCase();
-	        const status = row.cells[6].textContent;
-	        
-	        const matchesSearch = memberName.includes(searchTerm) || 
-	                            bookTitle.includes(searchTerm) ||
-	                            bookAuthor.includes(searchTerm);
-	        
-	        const matchesStatus = statusFilter === '' || status === statusFilter;
-	        
-	        if (matchesSearch && matchesStatus) {
-	            row.style.display = '';
-	        } else {
-	            row.style.display = 'none';
-	        }
-	    });
-	}
+    function filterMembers() {
+        const searchText = memberSearch?.value.toLowerCase() || '';
+        const roleValue = filterRole?.value || '';
+        const rows = document.querySelectorAll('#memberTable tbody tr');
 
-	function renderAllLoans(loans) {
-	    const tbody = document.querySelector('#allLoansTable tbody');
-	    if (!tbody) return;
-	    
-	    tbody.innerHTML = '';
-	    
-	    if (loans.length === 0) {
-	        tbody.innerHTML = '<tr><td colspan="7">Ödünç alınan kitap bulunamadı.</td></tr>';
-	        return;
-	    }
+        rows.forEach(row => {
+            if (row.cells.length < 7) return;
+            const name = row.cells[1]?.textContent.toLowerCase() || '';
+            const email = row.cells[2]?.textContent.toLowerCase() || '';
+            const phone = row.cells[3]?.textContent.toLowerCase() || '';
+            const role = row.cells[5]?.textContent || '';
 
-	    loans.forEach(loan => {
-	        const row = document.createElement('tr');
-	        const status = loan.returnDate ? 'İade Edildi' : 'Ödünç Alındı';
-	        
-	        row.innerHTML = `
-	            <td>${loan.member?.fullName || '-'}</td>
-	            <td>${loan.book?.title || '-'}</td>
-	            <td>${loan.book?.author || '-'}</td>
-	            <td>${loan.loanDate ? formatDate(loan.loanDate) : '-'}</td>
-	            <td>${loan.dueDate ? formatDate(loan.dueDate) : '-'}</td>
-	            <td>${loan.returnDate ? formatDate(loan.returnDate) : '-'}</td>
-	            <td>${status}</td>
-	        `;
-	        tbody.appendChild(row);
-	    });
-	}
-    
-	function renderBooks(books) {
-	    if (!bookTableBody) return;
-	    
-	    bookTableBody.innerHTML = '';
-	    
-	    books.forEach(book => {
-	        const row = document.createElement('tr');
-	        row.innerHTML = `
-	            <td>${book.id || '-'}</td>
-	            <td>${book.title || '-'}</td>
-	            <td>${book.author || '-'}</td>
-	            <td>${book.category || '-'}</td>
-	            <td>${book.isbnNo || '-'}</td>
-	            <td>${book.available ? 'Evet' : 'Hayır'}</td>
-	            <td>
-	                ${userData.role === 'ADMIN' 
-	                    ? `<button class="btn-delete" data-id="${book.id}">Sil</button>` 
-	                    : ''}
-	                ${book.available 
-	                    ? `<button class="btn-borrow" data-id="${book.id}">Ödünç Al</button>`
-	                    : '-'}
-	            </td>
-	        `;
-	        bookTableBody.appendChild(row);
-	    });
-	    
-	    // Silme butonları için event listener ekle
-	    document.querySelectorAll('.btn-delete').forEach(btn => {
-	        btn.addEventListener('click', function() {
-	            const bookId = this.getAttribute('data-id');
-	            deleteBook(bookId);
-	        });
-	    });
-	    
-	    // Ödünç alma butonları için event listener
-	    document.querySelectorAll('.btn-borrow').forEach(btn => {
-	        btn.addEventListener('click', function() {
-	            const bookId = this.getAttribute('data-id');
-	            borrowBook(bookId);
-	        });
-	    });
-	}
-    
-	function renderMembers(members) {
-	    if (!memberTableBody) return;
-	    
-	    memberTableBody.innerHTML = '';
-	    
-	    members.forEach(member => {
-	        const isAdmin = userData.role === 'ADMIN';
-	        
-	        const row = document.createElement('tr');
-	        row.innerHTML = `
-	            <td>${member.id || '-'}</td>
-	            <td>${member.fullName || '-'}</td>
-	            <td>${member.email || '-'}</td>
-	            <td>${member.phoneNumber || '-'}</td>
-	            <td>${member.user?.username || '-'}</td>
-	            <td>${member.user?.role || '-'}</td>
-	            <td>
-	                ${isAdmin 
-	                    ? `<button class="btn-edit-role" data-id="${member.id}">Rol Düzenle</button>
-	                       <button class="btn-delete" data-id="${member.user?.id || member.id}">Sil</button>`
-	                    : '-'}
-	            </td>
-	        `;
-	        memberTableBody.appendChild(row);
-	    });
-	    
-	    // Silme butonları için event listener ekle
-	    document.querySelectorAll('.btn-delete').forEach(btn => {
-	        btn.addEventListener('click', function() {
-	            const userId = this.getAttribute('data-id');
-	            deleteUser(userId);
-	        });
-	    });
-	    
-	    // Rol düzenleme butonları için event listener
-	    document.querySelectorAll('.btn-edit-role').forEach(btn => {
-	        btn.addEventListener('click', function() {
-	            const memberId = this.getAttribute('data-id');
-	            editMemberRole(memberId);
-	        });
-	    });
-	}
-    
-	async function saveBook() {
-	    const formData = {
-	        title: document.getElementById('bookTitle').value,
-	        author: document.getElementById('bookAuthor').value,
-	        category: document.getElementById('bookCategory').value.toUpperCase(), // Kategoriyi büyük harfe çevir
-	        isbnNo: document.getElementById('bookIsbn').value
-	    };
-	    
-	    // ... fonksiyonun geri kalanı ...
-	
-	    
-	       
-	       try {
-	           showLoading(true);
-	           const response = await fetch(`${apiBaseUrl}/book/save`, {
-	               method: 'POST',
-	               headers: {
-	                   'Authorization': `Bearer ${token}`,
-	                   'Content-Type': 'application/json'
-	               },
-	               body: JSON.stringify(formData)
-	           });
-	           
-	           const result = await handleResponse(response);
-	           
-	           showSuccess('Kitap başarıyla eklendi!');
-	           bookForm.reset();
-	           loadBooks();
-	       } catch (error) {
-	           showError('Kitap eklenirken hata oluştu: ' + error.message);
-	       } finally {
-	           showLoading(false);
-	       }
-	   }
-    
-	   async function deleteBook(bookId) {
-	       if (!confirm('Bu kitabı silmek istediğinize emin misiniz?')) return;
-	       
-	       try {
-	           showLoading(true);
-	           const response = await fetch(`${apiBaseUrl}/book/delete/${bookId}`, {
-	               method: 'DELETE',
-	               headers: {
-	                   'Authorization': `Bearer ${token}`,
-	                   'Content-Type': 'application/json'
-	               }
-	           });
-	           
-	           await handleResponse(response);
-	           
-	           showSuccess('Kitap başarıyla silindi!');
-	           loadBooks();
-	       } catch (error) {
-	           showError('Kitap silinirken hata oluştu: ' + error.message);
-	       } finally {
-	           showLoading(false);
-	       }
-	   }
-    
-	   async function deleteUser(userId) {
-	       if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
-	       
-	       try {
-	           showLoading(true);
-	           const response = await fetch(`${apiBaseUrl}/user/delete/${userId}`, {
-	               method: 'DELETE',
-	               headers: {
-	                   'Authorization': `Bearer ${token}`,
-	                   'Content-Type': 'application/json'
-	               }
-	           });
-	           
-	           await handleResponse(response);
-	           
-	           showSuccess('Kullanıcı başarıyla silindi!');
-	           loadMembers();
-	       } catch (error) {
-	           showError('Kullanıcı silinirken hata oluştu: ' + error.message);
-	       } finally {
-	           showLoading(false);
-	       }
-	   }
+            const matchesSearch = searchText === '' || name.includes(searchText) || email.includes(searchText) || phone.includes(searchText);
+            const matchesRole = roleValue === '' || role === roleValue;
 
-	   // Üye silme fonksiyonunu güncelle (user silme ile aynı endpoint'i kullanacak)
-	   async function deleteMember(memberId) {
-	       if (!confirm('Bu üyeyi silmek istediğinize emin misiniz?')) return;
-	       
-	       try {
-	           showLoading(true);
-	           const response = await fetch(`${apiBaseUrl}/user/delete/${memberId}`, {
-	               method: 'DELETE',
-	               headers: {
-	                   'Authorization': `Bearer ${token}`,
-	                   'Content-Type': 'application/json'
-	               }
-	           });
-	           
-	           await handleResponse(response);
-	           
-	           showSuccess('Üye başarıyla silindi!');
-	           loadMembers();
-	       } catch (error) {
-	           showError('Üye silinirken hata oluştu: ' + error.message);
-	       } finally {
-	           showLoading(false);
-	       }
-	   }
-    
+            row.style.display = (matchesSearch && matchesRole) ? '' : 'none';
+        });
+    }
+
+    function renderMembers(members) {
+        if (!memberTableBody || userData.role !== 'ADMIN') return;
+        memberTableBody.innerHTML = '';
+
+        if (!members || members.length === 0) {
+            memberTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Üye bulunamadı.</td></tr>';
+            return;
+        }
+
+        members.forEach(member => {
+            const userIdForDelete = member.user?.id || member.id;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${member.id || '-'}</td>
+                <td>${escapeHtml(member.fullName || '-')}</td>
+                <td>${escapeHtml(member.email || '-')}</td>
+                <td>${member.phoneNumber || '-'}</td>
+                <td>${escapeHtml(member.user?.username || '-')}</td>
+                <td>${member.user?.role || '-'}</td>
+                <td>
+                    <button class="btn-edit-role" data-id="${member.id}">Rol Düzenle</button>
+                    <button class="btn-delete" data-id="${userIdForDelete}">Sil</button>
+                </td>
+            `;
+            memberTableBody.appendChild(row);
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => deleteUser(btn.dataset.id));
+        });
+        document.querySelectorAll('.btn-edit-role').forEach(btn => {
+            btn.addEventListener('click', () => editMemberRole(btn.dataset.id));
+        });
+    }
+
+    async function deleteUser(userId) {
+        if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+        try {
+            showLoading(true);
+            await apiFetch(`/user/delete/${userId}`, { method: 'DELETE' });
+            showSuccess('Kullanıcı silindi!');
+            loadMembers();
+        } catch (error) {
+            showError('Kullanıcı silinirken hata oluştu: ' + error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
     async function editMemberRole(memberId) {
         try {
             showLoading(true);
-            const response = await fetch(`${apiBaseUrl}/member/get/${memberId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            const result = await handleResponse(response);
-            
-            if (result && result.payload) {
-                openRoleEditModal(result.payload);
-            }
+            const member = await apiFetch(`/member/get/${memberId}`);
+            openRoleEditModal(member);
         } catch (error) {
             showError('Üye bilgileri alınırken hata oluştu: ' + error.message);
         } finally {
             showLoading(false);
         }
     }
-    
+
     function openRoleEditModal(member) {
+        const existingModal = document.getElementById('editRoleModal');
+        if (existingModal) existingModal.remove();
+
         const modalHtml = `
             <div class="modal" id="editRoleModal">
                 <div class="modal-content">
@@ -513,12 +454,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3>Rol Düzenle</h3>
                     <form id="editRoleForm">
                         <input type="hidden" id="editMemberId" value="${member.id}">
-                        <div class="form-group">
-                            <label>Kullanıcı: ${member.user?.username || '-'}</label>
-                        </div>
-                        <div class="form-group">
-                            <label>Mevcut Rol: ${member.user?.role || '-'}</label>
-                        </div>
+                        <div class="form-group"><label>Kullanıcı: ${escapeHtml(member.user?.username || '-')}</label></div>
+                        <div class="form-group"><label>Mevcut Rol: ${member.user?.role || '-'}</label></div>
                         <div class="form-group">
                             <label for="newRole">Yeni Rol:</label>
                             <select id="newRole" required>
@@ -531,77 +468,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        
+
         document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
         const modal = document.getElementById('editRoleModal');
         const closeBtn = modal.querySelector('.close');
         const editForm = document.getElementById('editRoleForm');
-        
+
         modal.style.display = 'block';
-        
-        closeBtn.onclick = function() {
-            modal.remove();
-        };
-        
-        window.onclick = function(event) {
-            if (event.target === modal) {
-                modal.remove();
-            }
-        };
-        
-        editForm.addEventListener('submit', async function(e) {
+
+        closeBtn.onclick = () => modal.remove();
+        window.onclick = (event) => { if (event.target === modal) modal.remove(); };
+
+        editForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             await updateMemberRole(member.id);
             modal.remove();
         });
     }
-	// Arama sonuç sayacı fonksiyonu (güncellenmiş)
-	// Arama sonuç sayacı fonksiyonu (güncellenmiş)
-	function updateSearchResultsCount(visibleCount) {
-	    const totalCount = allBooks.length;
-	    const searchHeader = document.querySelector('#books-tab h3');
-	    
-	    if (searchHeader) {
-	        if (document.getElementById('bookSearch').value || document.getElementById('searchCategory').value) {
-	            searchHeader.innerHTML = `Kitap Listesi <span style="font-size: 14px; color: #666; margin-left: 10px;">(${visibleCount}/${totalCount} kitap)</span>`;
-	            
-	            // Temizleme butonu ekle
-	            if (!document.getElementById('clearSearchBtn')) {
-	                const clearBtn = document.createElement('button');
-	                clearBtn.id = 'clearSearchBtn';
-	                clearBtn.textContent = 'Temizle';
-	                clearBtn.classList.add('btn-clear');
-	                clearBtn.addEventListener('click', resetSearch);
-	                document.querySelector('.books-search-section').appendChild(clearBtn);
-	            }
-	        } else {
-	            searchHeader.innerHTML = `Kitap Listesi <span style="font-size: 14px; color: #666; margin-left: 10px;">(${totalCount} kitap)</span>`;
-	            
-	            // Temizleme butonunu kaldır
-	            const clearBtn = document.getElementById('clearSearchBtn');
-	            if (clearBtn) clearBtn.remove();
-	        }
-	    }
-	}
-	
-    
+
     async function updateMemberRole(memberId) {
         try {
             showLoading(true);
             const newRole = document.getElementById('newRole').value;
-            
-            const response = await fetch(`${apiBaseUrl}/member/update-role/${memberId}`, {
+            await apiFetch(`/member/update-role/${memberId}`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ role: newRole })
+                body: JSON.stringify(newRole) // Role enum olarak gönderiliyor
             });
-            
-            await handleResponse(response);
-            showSuccess('Rol başarıyla güncellendi!');
+            showSuccess('Rol güncellendi!');
             loadMembers();
         } catch (error) {
             showError('Rol güncellenirken hata oluştu: ' + error.message);
@@ -609,328 +502,264 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoading(false);
         }
     }
-    
-    async function borrowBook(bookId) {
-        if (!confirm('Bu kitabı ödünç almak istediğinize emin misiniz?')) return;
-        
-        try {
-            const memberId = jwtService.extractMemberId(token);
-            if (!memberId) {
-                throw new Error("Üye bilgileriniz eksik. Lütfen tekrar giriş yapın.");
-            }
 
+    // ========== ÖDÜNÇ FONKSİYONLARI ==========
+    async function loadAllLoans() {
+        if (userData.role !== 'ADMIN') return;
+        try {
             showLoading(true);
-            const response = await fetch(`${apiBaseUrl}/loan/borrow`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    bookId: bookId,
-                    memberId: memberId
-                })
-            });
-            
-            const result = await handleResponse(response);
-            
-            showSuccess('Kitap başarıyla ödünç alındı!');
-            loadBooks();
-            loadProfile();
+            allLoans = await apiFetch('/loan/all') || [];
+            renderAllLoans(allLoans);
         } catch (error) {
-            console.error('Ödünç alma hatası:', error);
-            showError('Kitap ödünç alınırken hata oluştu: ' + error.message);
+            showError('Ödünç listesi yüklenirken hata oluştu: ' + error.message);
         } finally {
             showLoading(false);
         }
     }
 
-    async function loadProfile() {
-        showLoading(true);
+    function filterLoans() {
+        const searchTerm = loanSearch?.value.toLowerCase() || '';
+        const statusFilter = filterStatus?.value || '';
+        const rows = document.querySelectorAll('#allLoansTable tbody tr');
 
-        try {
-            const memberResponse = await fetch(`${apiBaseUrl}/member/me`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const memberData = await handleResponse(memberResponse);
-            renderProfile(memberData.payload);
-        } catch (e) {
-            showError("Profil bilgileri alınamadı: " + e.message);
-        }
+        rows.forEach(row => {
+            if (row.cells.length < 7) return;
+            const memberName = row.cells[0]?.textContent.toLowerCase() || '';
+            const bookTitle = row.cells[1]?.textContent.toLowerCase() || '';
+            const bookAuthor = row.cells[2]?.textContent.toLowerCase() || '';
+            const status = row.cells[6]?.textContent || '';
 
-        try {
-            const loansResponse = await fetch(`${apiBaseUrl}/loan/my-loans`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const loansData = await handleResponse(loansResponse);
-            renderMyLoans(loansData.payload || []);
-        } catch (e) {
-            console.warn("Loan yüklenemedi:", e.message);
-            renderMyLoans([]); // boş liste göster
-        }
+            const matchesSearch = searchTerm === '' || memberName.includes(searchTerm) || bookTitle.includes(searchTerm) || bookAuthor.includes(searchTerm);
+            const matchesStatus = statusFilter === '' || status === statusFilter;
 
-        showLoading(false);
+            row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+        });
     }
 
+    function renderAllLoans(loans) {
+        const tbody = document.querySelector('#allLoansTable tbody');
+        if (!tbody || userData.role !== 'ADMIN') return;
+        tbody.innerHTML = '';
+
+        if (!loans || loans.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Ödünç alınan kitap bulunamadı.</td></tr>';
+            return;
+        }
+
+        loans.forEach(loan => {
+            const status = loan.returnDate ? 'İade Edildi' : 'Ödünç Alındı';
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${escapeHtml(loan.member?.fullName || '-')}</td>
+                <td>${escapeHtml(loan.book?.title || '-')}</td>
+                <td>${escapeHtml(loan.book?.author || '-')}</td>
+                <td>${formatDate(loan.loanDate)}</td>
+                <td>${formatDate(loan.dueDate)}</td>
+                <td>${formatDate(loan.returnDate)}</td>
+                <td>${status}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // ========== PROFİL FONKSİYONLARI ==========
+    async function loadProfile() {
+        showLoading(true);
+        try {
+            const memberData = await apiFetch('/member/me');
+            renderProfile(memberData);
+        } catch (error) {
+            console.error('Profil bilgileri alınamadı:', error);
+            showError('Profil bilgileri alınamadı: ' + error.message);
+            renderProfile(null); // boş göster
+        }
+
+        try {
+            myLoans = await apiFetch('/loan/my-loans') || [];
+            renderMyLoans(myLoans);
+        } catch (error) {
+            console.error('Ödünç kitaplar alınamadı:', error);
+            showError('Ödünç kitaplarınız alınamadı: ' + error.message);
+            renderMyLoans([]);
+        } finally {
+            showLoading(false);
+        }
+    }
 
     function renderProfile(member) {
         const profileDiv = document.getElementById('profileInfo');
         if (!profileDiv) return;
-        
+
+        if (!member) {
+            profileDiv.innerHTML = '<p style="color:red;">Profil bilgileri yüklenemedi.</p>';
+            return;
+        }
+
         profileDiv.innerHTML = `
-            <p><strong>Ad Soyad:</strong> ${member.fullName || '-'}</p>
-            <p><strong>Email:</strong> ${member.email || '-'}</p>
-            <p><strong>Telefon:</strong> ${member.phoneNumber || '-'}</p>
-            <p><strong>Üyelik Tarihi:</strong> ${member.membershipDate ? new Date(member.membershipDate).toLocaleDateString() : '-'}</p>
-            <p><strong>Kullanıcı Adı:</strong> ${member.user?.username || '-'}</p>
-            <p><strong>Rol:</strong> ${member.user?.role || '-'}</p>
-        `;
+        <p><strong>Ad Soyad:</strong> ${escapeHtml(member.fullName || '-')}</p>
+        <p><strong>Email:</strong> ${escapeHtml(member.email || '-')}</p>
+        <p><strong>Telefon:</strong> ${member.phoneNumber || '-'}</p>
+        <p><strong>Üyelik Tarihi:</strong> ${formatDate(member.membershipDate)}</p>
+        <p><strong>Kullanıcı Adı:</strong> ${escapeHtml(member.user?.username || '-')}</p>
+        <p><strong>Rol:</strong> ${member.user?.role || '-'}</p>
+    `;
     }
 
-	function renderMyLoans(loans) {
-	    const tbody = document.querySelector('#myLoansTable tbody');
-	    if (!tbody) return;
-	    
-	    tbody.innerHTML = '';
+    function renderMyLoans(loans) {
+        const tbody = document.querySelector('#myLoansTable tbody');
+        if (!tbody) return;
 
-	    const activeLoans = loans.filter(loan => !loan.returnDate);
+        const activeLoans = loans.filter(loan => !loan.returnDate);
+        tbody.innerHTML = '';
 
-	    if (activeLoans.length === 0) {
-	        tbody.innerHTML = '<tr><td colspan="5">Ödünç alınan kitap bulunamadı.</td></tr>';
-	        updateMyLoansSearchResults(); // Sonuç sayacını güncelle
-	        return;
-	    }
+        if (activeLoans.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Ödünç alınan kitap bulunamadı.</td></tr>';
+            updateMyLoansSearchResults();
+            return;
+        }
 
-	    activeLoans.forEach(loan => {
-	        const row = document.createElement('tr');
-	        row.innerHTML = `
-	            <td>${loan.book?.title || '-'}</td>
-	            <td>${loan.book?.author || '-'}</td>
-	            <td>${loan.loanDate ? formatDate(loan.loanDate) : '-'}</td>
-	            <td>${loan.dueDate ? formatDate(loan.dueDate) : '-'}</td>
-	            <td>
-	                <button class="btn-return" data-id="${loan.id}">İade Et</button>
-	            </td>
-	        `;
-	        tbody.appendChild(row);
-	    });
+        activeLoans.forEach(loan => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${escapeHtml(loan.book?.title || '-')}</td>
+                <td>${escapeHtml(loan.book?.author || '-')}</td>
+                <td>${formatDate(loan.loanDate)}</td>
+                <td>${formatDate(loan.dueDate)}</td>
+                <td><button class="btn-return" data-id="${loan.id}">İade Et</button></td>
+            `;
+            tbody.appendChild(row);
+        });
 
-	    document.querySelectorAll('.btn-return').forEach(btn => {
-	        btn.addEventListener('click', function() {
-	            const loanId = this.getAttribute('data-id');
-	            returnBook(loanId);
-	        });
-	    });
-	    
-	    // Sonuç sayacını güncelle
-	    updateMyLoansSearchResults();
-	}
+        document.querySelectorAll('.btn-return').forEach(btn => {
+            btn.addEventListener('click', () => returnBook(btn.dataset.id));
+        });
 
-    function formatDate(dateString) {
-        if (!dateString) return '-';
-        
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('tr-TR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        } catch (e) {
-            console.error('Tarih formatlama hatası:', e);
-            return dateString;
+        updateMyLoansSearchResults();
+    }
+
+    function filterMyLoans() {
+        const searchTerm = myLoansSearch?.value.toLowerCase() || '';
+        const rows = document.querySelectorAll('#myLoansTable tbody tr');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            if (row.cells.length < 2) return;
+            const title = row.cells[0]?.textContent.toLowerCase() || '';
+            const author = row.cells[1]?.textContent.toLowerCase() || '';
+            const matches = searchTerm === '' || title.includes(searchTerm) || author.includes(searchTerm);
+            row.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
+        });
+
+        updateMyLoansSearchResults(visibleCount);
+    }
+
+    function updateMyLoansSearchResults(visibleCount) {
+        const searchTerm = myLoansSearch?.value || '';
+        const rows = document.querySelectorAll('#myLoansTable tbody tr');
+        const totalRows = Array.from(rows).filter(row =>
+            !row.innerHTML.includes('Ödünç alınan kitap bulunamadı')
+        ).length;
+        const loansHeader = document.querySelector('#profile-tab h3:nth-of-type(2)');
+        if (!loansHeader) return;
+
+        if (searchTerm) {
+            loansHeader.innerHTML = `Ödünç Aldığım Kitaplar <span style="font-size:14px;color:#666;margin-left:10px;">(${visibleCount || 0}/${totalRows} kitap)</span>`;
+        } else {
+            loansHeader.innerHTML = `Ödünç Aldığım Kitaplar <span style="font-size:14px;color:#666;margin-left:10px;">(${totalRows} kitap)</span>`;
         }
     }
 
     async function returnBook(loanId) {
         if (!confirm('Bu kitabı iade etmek istediğinize emin misiniz?')) return;
-        
         try {
             showLoading(true);
-            const response = await fetch(`${apiBaseUrl}/loan/return/${loanId}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            await handleResponse(response);
-            
-            showSuccess('Kitap başarıyla iade edildi!');
+            await apiFetch(`/loan/return/${loanId}`, { method: 'POST' });
+            showSuccess('Kitap iade edildi!');
             loadProfile();
+            loadBooks();
         } catch (error) {
-            showError('Kitap iade edilirken hata oluştu: ' + error.message);
+            showError('İade hatası: ' + error.message);
         } finally {
             showLoading(false);
         }
     }
-	// ... mevcut fonksiyonlar ...
 
-	// YENİ EKLENEN FONKSİYONLAR (sayfanın sonuna ekleyin)
-	function openProfileEditModal() {
-	    const memberId = jwtService.extractMemberId(token);
-	    if (!memberId) {
-	        showError('Üye bilgileriniz alınamadı. Lütfen tekrar giriş yapın.');
-	        return;
-	    }
-
-	    // Profil bilgilerini al
-	    fetch(`${apiBaseUrl}/member/get/${memberId}`, {
-	        headers: {
-	            'Authorization': `Bearer ${token}`,
-	            'Content-Type': 'application/json'
-	        }
-	    })
-	    .then(response => handleResponse(response))
-	    .then(result => {
-	        if (result && result.payload) {
-	            const member = result.payload;
-	            const modalHtml = `
-	                <div class="modal" id="editProfileModal">
-	                    <div class="modal-content">
-	                        <span class="close">&times;</span>
-	                        <h3>Profili Düzenle</h3>
-	                        <form id="editProfileForm">
-	                            <input type="hidden" id="editMemberId" value="${member.id}">
-	                            <input type="text" id="editFullName" placeholder="Ad Soyad" value="${member.fullName || ''}" required>
-	                            <input type="email" id="editEmail" placeholder="Email" value="${member.email || ''}" required>
-	                            <input type="text" id="editPhoneNumber" placeholder="Telefon (05xxxxxxxxx)" value="${member.phoneNumber || ''}" required>
-	                            <button type="submit">Güncelle</button>
-	                        </form>
-	                    </div>
-	                </div>
-	            `;
-	            
-	            document.body.insertAdjacentHTML('beforeend', modalHtml);
-	            
-	            const modal = document.getElementById('editProfileModal');
-	            const closeBtn = modal.querySelector('.close');
-	            const editForm = document.getElementById('editProfileForm');
-	            
-	            modal.style.display = 'block';
-	            
-	            closeBtn.onclick = function() {
-	                modal.remove();
-	            };
-	            
-	            window.onclick = function(event) {
-	                if (event.target === modal) {
-	                    modal.remove();
-	                }
-	            };
-	            
-	            editForm.addEventListener('submit', function(e) {
-	                e.preventDefault();
-	                updateProfile(member.id);
-	                modal.remove();
-	            });
-	        }
-	    })
-	    .catch(error => {
-	        showError('Profil bilgileri alınırken hata oluştu: ' + error.message);
-	    });
-	}
-
-	async function updateProfile(memberId) {
-	    try {
-	        showLoading(true);
-	        const formData = {
-	            fullName: document.getElementById('editFullName').value,
-	            email: document.getElementById('editEmail').value,
-	            phoneNumber: document.getElementById('editPhoneNumber').value
-	        };
-	        
-	        const response = await fetch(`${apiBaseUrl}/member/update/${memberId}`, {
-	            method: 'PUT',
-	            headers: {
-	                'Authorization': `Bearer ${token}`,
-	                'Content-Type': 'application/json'
-	            },
-	            body: JSON.stringify(formData)
-	        });
-	        
-	        await handleResponse(response);
-	        
-	        showSuccess('Profil başarıyla güncellendi!');
-	        loadProfile();
-	    } catch (error) {
-	        showError('Profil güncellenirken hata oluştu: ' + error.message);
-	    } finally {
-	        showLoading(false);
-	    }
-	}
-
-	// ... varsa diğer mevcut fonksiyonlar ...
-    
-    function isTokenExpired(token) {
+    // ========== PROFİL DÜZENLEME ==========
+    async function openProfileEditModal() {
         try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            return payload.exp * 1000 < Date.now();
-        } catch (e) {
-            return true;
+            const member = await apiFetch('/member/me');
+            showProfileEditModal(member);
+        } catch (error) {
+            showError('Profil bilgileri alınırken hata oluştu: ' + error.message);
         }
     }
-    
-    function logout() {
-        localStorage.clear();
-        window.location.href = '/login.html';
+
+    function showProfileEditModal(member) {
+        const existingModal = document.getElementById('editProfileModal');
+        if (existingModal) existingModal.remove();
+
+        const modalHtml = `
+            <div class="modal" id="editProfileModal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h3>Profili Düzenle</h3>
+                    <form id="editProfileForm">
+                        <input type="hidden" id="editMemberId" value="${member.id}">
+                        <div class="form-group">
+                            <label>Ad Soyad:</label>
+                            <input type="text" id="editFullName" value="${escapeHtml(member.fullName || '')}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email:</label>
+                            <input type="email" id="editEmail" value="${escapeHtml(member.email || '')}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Telefon:</label>
+                            <input type="text" id="editPhoneNumber" value="${member.phoneNumber || ''}" required>
+                        </div>
+                        <button type="submit">Güncelle</button>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = document.getElementById('editProfileModal');
+        const closeBtn = modal.querySelector('.close');
+        const editForm = document.getElementById('editProfileForm');
+
+        modal.style.display = 'block';
+
+        closeBtn.onclick = () => modal.remove();
+        window.onclick = (event) => { if (event.target === modal) modal.remove(); };
+
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await updateProfile(member.id);
+            modal.remove();
+        });
     }
-    
-    async function handleResponse(response) {
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.errorMessage || `HTTP error! status: ${response.status}`);
+
+    async function updateProfile(memberId) {
+        const formData = {
+            fullName: document.getElementById('editFullName')?.value.trim(),
+            email: document.getElementById('editEmail')?.value.trim(),
+            phoneNumber: document.getElementById('editPhoneNumber')?.value.trim()
+        };
+
+        try {
+            showLoading(true);
+            await apiFetch(`/member/update/${memberId}`, {
+                method: 'PUT',
+                body: JSON.stringify(formData)
+            });
+            showSuccess('Profil güncellendi!');
+            loadProfile();
+        } catch (error) {
+            showError('Profil güncellenirken hata oluştu: ' + error.message);
+        } finally {
+            showLoading(false);
         }
-        return data;
-    }
-	function updateMyLoansSearchResults() {
-	    const searchTerm = document.getElementById('myLoansSearch').value;
-	    const visibleRows = document.querySelectorAll('#myLoansTable tbody tr:not([style*="display: none"])');
-	    const totalRows = document.querySelectorAll('#myLoansTable tbody tr').length;
-	    
-	    const loansHeader = document.querySelector('#profile-tab h3:nth-of-type(2)');
-	    
-	    if (loansHeader && searchTerm) {
-	        loansHeader.innerHTML = `Ödünç Aldığım Kitaplar <span style="font-size: 14px; color: #666; margin-left: 10px;">(${visibleRows.length}/${totalRows} kitap)</span>`;
-	    } else if (loansHeader) {
-	        loansHeader.innerHTML = `Ödünç Aldığım Kitaplar <span style="font-size: 14px; color: #666; margin-left: 10px;">(${totalRows} kitap)</span>`;
-	    }
-	}
-	function filterMyLoans() {
-	    const searchTerm = document.getElementById('myLoansSearch').value.toLowerCase();
-	    const rows = document.querySelectorAll('#myLoansTable tbody tr');
-	    
-	    rows.forEach(row => {
-	        const bookTitle = row.cells[0].textContent.toLowerCase();
-	        const bookAuthor = row.cells[1].textContent.toLowerCase();
-	        
-	        const matchesSearch = searchTerm === '' || 
-	                            bookTitle.includes(searchTerm) ||
-	                            bookAuthor.includes(searchTerm);
-	        
-	        if (matchesSearch) {
-	            row.style.display = '';
-	        } else {
-	            row.style.display = 'none';
-	        }
-	    });
-	    
-	    // Görünen sonuç sayısını güncelle
-	    updateMyLoansSearchResults();
-	}
-    
-    function showLoading(show) {
-        const loader = document.getElementById('loadingSpinner');
-        if (loader) {
-            loader.style.display = show ? 'block' : 'none';
-        }
-    }
-    
-    function showSuccess(message) {
-        alert(message);
-    }
-    
-    function showError(message) {
-        alert(message);
     }
 });

@@ -1,12 +1,5 @@
 package com.berkaykomur.service.impl;
 
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.berkaykomur.dto.DtoUser;
 import com.berkaykomur.dto.DtoUserIU;
 import com.berkaykomur.exception.BaseException;
@@ -16,50 +9,42 @@ import com.berkaykomur.model.User;
 import com.berkaykomur.repository.MemberRepository;
 import com.berkaykomur.repository.UserRepository;
 import com.berkaykomur.service.IUserService;
-
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class UserServiceImpl implements IUserService {
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private MemberRepository memberRepository;
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+
+    private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
+    @PreAuthorize("hasRole('ADMIN') or #dtoUserIU.username==authentication.principal.username")
     public DtoUser updateUser(DtoUserIU dtoUserIU) {
         User user = userRepository.findByUsername(dtoUserIU.getUsername())
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType. NO_RECORD_EXIST, dtoUserIU.getUsername())));
 
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        boolean isAdmin = isAdmin();
-
-        if (!currentUsername.equals(user.getUsername()) && !isAdmin) {
-            throw new BaseException(new ErrorMessage(MessagesType.UNAUTHORIZED_ACTIO,""));
-        }
-
         if (dtoUserIU.getPassword() != null && !dtoUserIU.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(dtoUserIU.getPassword()));
         }
-        if (isAdmin && dtoUserIU.getRole() != null) {
+        if (dtoUserIU.getRole() != null) {
             user.setRole(dtoUserIU.getRole());
         }
         return convertToDto(userRepository.save(user));
     }
     @Override
-    @Transactional
+    @PreAuthorize("hasRole('ADMIN') or #id==authentication.principal.userId")
     public void deleteUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.NO_RECORD_EXIST, id.toString())));
-
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        boolean isAdmin = isAdmin();
-
-        if (!currentUsername.equals(user.getUsername()) && !isAdmin) {
-            throw new BaseException(new ErrorMessage(MessagesType.UNAUTHORIZED_ACTIO, "Bu işlem için yetkiniz yok"));
-        }
 
         if (user.getMember() != null) {
             boolean hasActiveLoans = user.getMember().getLoans().stream()
@@ -78,9 +63,5 @@ public class UserServiceImpl implements IUserService {
         BeanUtils.copyProperties(user, dto);
         return dto;
     }
-    private boolean isAdmin() {
-        return SecurityContextHolder.getContext().getAuthentication()
-                .getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-    }
+
 }

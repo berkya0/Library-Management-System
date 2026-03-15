@@ -1,12 +1,5 @@
-// LoanServiceImpl.java
-package com.berkaykomur.service.impl;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
 
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+package com.berkaykomur.service.impl;
 
 import com.berkaykomur.dto.DtoBook;
 import com.berkaykomur.dto.DtoLoan;
@@ -22,18 +15,27 @@ import com.berkaykomur.repository.BookRepository;
 import com.berkaykomur.repository.LoanRepository;
 import com.berkaykomur.repository.MemberRepository;
 import com.berkaykomur.service.ILoanService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class LoanServiceImpl implements ILoanService {
 
-    @Autowired
-    private BookRepository bookRepository;
-    @Autowired
-    private MemberRepository memberRepository;
-    @Autowired
-    private LoanRepository loanRepository;
+    private final BookRepository bookRepository;
+    private final MemberRepository memberRepository;
+    private final LoanRepository loanRepository;
     
     @Override
+    @Transactional
+    @PreAuthorize("#request.memberId==authentication.principal.memberId")
     public DtoLoan loanBook(LoanRequest request) {
         Book book = bookRepository.findById(request.getBookId())
             .orElseThrow(() -> new BaseException(
@@ -75,6 +77,8 @@ public class LoanServiceImpl implements ILoanService {
         return dtoLoan;
     }
     @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("#memberId==authentication.principal.memberId")
     public List<DtoLoan> getLoansByMemberId(Long memberId) {
         List<Loan> loans = loanRepository.findByMemberId(memberId);
         return loans.stream().map(loan -> {
@@ -90,7 +94,9 @@ public class LoanServiceImpl implements ILoanService {
     }
 
     @Override
-    public DtoLoan returnBook(Long loanId) {
+    @Transactional
+    @PreAuthorize("#memberId == authentication.principal.memberId")
+    public DtoLoan returnBook(Long memberId, Long loanId) {
         Loan loan = loanRepository.findById(loanId)
             .orElseThrow(() -> new BaseException(
                 new ErrorMessage(MessagesType.NO_RECORD_EXIST, 
@@ -116,16 +122,9 @@ public class LoanServiceImpl implements ILoanService {
 
         return dtoLoan;
     }
+
     @Override
-    public boolean isLoanBelongsToMember(Long loanId, Long memberId) {
-        Loan loan = loanRepository.findById(loanId)
-            .orElseThrow(() -> new BaseException(
-                new ErrorMessage(MessagesType.NO_RECORD_EXIST, 
-                "Ödünç kaydı bulunamadı: " + loanId)));
-        
-        return loan.getMember().getId().equals(memberId);
-    }
-    @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<DtoLoan> getAllLoans() {
         List<Loan> loans = loanRepository.findAll();
         return loans.stream().map(loan -> {

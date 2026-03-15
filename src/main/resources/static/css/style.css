@@ -830,4 +830,90 @@ table tbody tr:last-child td {
     #bookSearch {
         width: 100% !important;
     }
+    #loadingSpinner {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px 30px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        border-radius: 10px;
+        z-index: 9999;
+        font-size: 18px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        backdrop-filter: blur(5px);
+    }
+
+    /* Form grupları */
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+        font-weight: 500;
+    }
+
+    /* Tablo boş durum mesajı */
+    table tbody tr td[colspan] {
+        text-align: center;
+        padding: 30px;
+        color: #888;
+        font-style: italic;
+    }
+
+    /* Buton stilleri iyileştirme */
+    .btn-delete, .btn-edit, .btn-edit-role, .btn-borrow, .btn-return {
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+        min-width: 70px;
+    }
+
+    .btn-delete:hover, .btn-edit:hover, .btn-edit-role:hover,
+    .btn-borrow:hover, .btn-return:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Responsive tablo scroll */
+    @media (max-width: 768px) {
+        table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        table tbody tr:hover {
+            transform: none;
+        }
+
+        .btn-delete, .btn-edit, .btn-edit-role, .btn-borrow, .btn-return {
+            padding: 6px 10px;
+            font-size: 12px;
+            min-width: 50px;
+        }
+    }
+
+    /* Arama input icon düzeltmesi */
+    .search-container {
+        position: relative;
+    }
+
+    .search-container .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .search-container input {
+        padding-left: 35px !important;
+    }
 }

@@ -1,14 +1,13 @@
 package com.berkaykomur.model;
 
-import java.time.LocalDate;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-//Loan.java
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "loan")
 @Getter
