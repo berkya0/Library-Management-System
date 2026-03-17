@@ -1,22 +1,22 @@
 package com.berkaykomur.exception;
 
-import java.util.Date;
-
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ApiError<T> {
-	
-	private String id;
-	
-	private T error;
-	
-	private Date errorTime;
+@Builder
+public class ApiError {
+    private final int status;
+    private final String message;
+    private final String error;
+    @Builder.Default
+    private final LocalDateTime timestamp = LocalDateTime.now();
+    private final String path;
+    private final Map<String, String> validationErrors;
 
 }
