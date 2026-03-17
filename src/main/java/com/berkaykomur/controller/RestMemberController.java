@@ -36,7 +36,7 @@ public class RestMemberController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUserInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<DtoMember> getCurrentUserInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(memberService.findMemberByUsername(userDetails.getUsername()));
     }
 

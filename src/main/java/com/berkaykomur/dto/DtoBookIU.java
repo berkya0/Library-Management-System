@@ -19,11 +19,11 @@ public class DtoBookIU {
     @Size(max = 100, message = "Yazar adı 100 karakterden uzun olamaz")
     private String author;
     
-    @NotNull
+    @NotNull(message = "Yanlış ya da girmeyi unuttun")
     private Category category;
 
     @NotBlank
-   @Size(min=13,max=13,message = "ISBN 13 haneli olmalıdır")
+    @Size(min=13,max=13,message = "ISBN 13 haneli olmalıdır")
     private String isbnNo;
     
     private boolean available;

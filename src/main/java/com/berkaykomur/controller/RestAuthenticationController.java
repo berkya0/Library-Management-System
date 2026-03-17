@@ -22,13 +22,8 @@ public class RestAuthenticationController  {
 		return ResponseEntity.ok(authenticationService.registerUser(request));
 	}
 
-	@PostMapping("/admin/register")
-	public ResponseEntity<DtoUser>registerAdmin(@Valid @RequestBody RegisterRequest request) {
-		return ResponseEntity.ok(authenticationService.registerAdmin(request));
-	}
-
 	@PostMapping("/authenticate")
-	public ResponseEntity<AuthResponse> authentica(@Valid @RequestBody AuthRequest input) {
+	public ResponseEntity<AuthResponse> authenticate(@Valid @RequestBody AuthRequest input) {
 		return ResponseEntity.ok(authenticationService.authenticate(input));
 	}
 
