@@ -3,6 +3,7 @@ package com.berkaykomur.service.impl;
 import com.berkaykomur.dto.DtoMember;
 import com.berkaykomur.dto.DtoMemberIU;
 import com.berkaykomur.dto.DtoUser;
+import com.berkaykomur.dto.UpdateRoleRequest;
 import com.berkaykomur.enums.Role;
 import com.berkaykomur.exception.BaseException;
 import com.berkaykomur.exception.ErrorMessage;
@@ -81,13 +82,13 @@ public class MemberService implements IMemberService {
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
-    public DtoMember updateMemberRole(Long id, Role newRole) {
+    public DtoMember updateMemberRole(Long id, UpdateRoleRequest role) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.NO_RECORD_EXIST, id.toString())));
         if (user.getMember() == null) {
             throw new BaseException(new ErrorMessage(MessagesType.NO_RECORD_EXIST, "Kullanıcıya ait member bilgisi bulunamadı"));
         }
-        user.setRole(newRole);
+        user.setRole(role.getRole());
         userRepository.save(user);
         return memberMapper.toDtoMember(user.getMember());
     }

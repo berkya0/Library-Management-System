@@ -2,6 +2,7 @@ package com.berkaykomur.controller;
 
 import com.berkaykomur.dto.DtoMember;
 import com.berkaykomur.dto.DtoMemberIU;
+import com.berkaykomur.dto.UpdateRoleRequest;
 import com.berkaykomur.enums.Role;
 import com.berkaykomur.jwt.CustomUserDetails;
 import com.berkaykomur.service.IMemberService;
@@ -41,7 +42,7 @@ public class RestMemberController {
     }
 
     @PutMapping("/update-role/{id}")
-    public ResponseEntity<DtoMember> updateMemberRole(@PathVariable Long id,@RequestBody Role role) {
+    public ResponseEntity<DtoMember> updateMemberRole(@PathVariable Long id,@RequestBody UpdateRoleRequest role) {
        return ResponseEntity.ok(memberService.updateMemberRole(id, role));
     }
 }
