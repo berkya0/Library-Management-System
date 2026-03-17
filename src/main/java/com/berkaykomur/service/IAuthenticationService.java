@@ -11,7 +11,7 @@ public interface IAuthenticationService {
     AuthResponse refreshToken(RefreshTokenRequest input);
     DtoUser registerUser(RegisterRequest request);
     AuthResponse authenticate(AuthRequest request);
-    DtoUser registerAdmin(RegisterRequest request);
+   // DtoUser registerAdmin(RegisterRequest request);
 	
 
 }

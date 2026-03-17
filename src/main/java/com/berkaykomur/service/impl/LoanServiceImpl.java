@@ -8,6 +8,7 @@ import com.berkaykomur.dto.LoanRequest;
 import com.berkaykomur.exception.BaseException;
 import com.berkaykomur.exception.ErrorMessage;
 import com.berkaykomur.exception.MessagesType;
+import com.berkaykomur.mapper.LoanMapper;
 import com.berkaykomur.model.Book;
 import com.berkaykomur.model.Loan;
 import com.berkaykomur.model.Member;
@@ -32,6 +33,7 @@ public class LoanServiceImpl implements ILoanService {
     private final BookRepository bookRepository;
     private final MemberRepository memberRepository;
     private final LoanRepository loanRepository;
+    private final LoanMapper loanMapper;
     
     @Override
     @Transactional
@@ -60,37 +62,25 @@ public class LoanServiceImpl implements ILoanService {
         loan.setBook(book);
         loan.setMember(member);
         loan.setLoanDetails();
+//      //  Loan savedLoan = loanRepository.save(loan);
+//        DtoLoan dtoLoan = new DtoLoan();
+//        BeanUtils.copyProperties(savedLoan, dtoLoan);
         
-        Loan savedLoan = loanRepository.save(loan);
-
-        DtoLoan dtoLoan = new DtoLoan();
-        BeanUtils.copyProperties(savedLoan, dtoLoan);
-        
-        DtoBook dtoBook = new DtoBook();
-        BeanUtils.copyProperties(book, dtoBook);
-        dtoLoan.setBook(dtoBook);
-        
-        DtoMember dtoMember = new DtoMember();
-        BeanUtils.copyProperties(member, dtoMember);
-        dtoLoan.setMember(dtoMember);
-
-        return dtoLoan;
+//        DtoBook dtoBook = new DtoBook();
+//        BeanUtils.copyProperties(book, dtoBook);
+//        dtoLoan.setBook(dtoBook);
+//
+//        DtoMember dtoMember = new DtoMember();
+//        BeanUtils.copyProperties(member, dtoMember);
+//        dtoLoan.setMember(dtoMember);
+        return loanMapper.toDtoLoan(loanRepository.save(loan));
     }
     @Override
     @Transactional(readOnly = true)
     @PreAuthorize("#memberId==authentication.principal.memberId")
     public List<DtoLoan> getLoansByMemberId(Long memberId) {
         List<Loan> loans = loanRepository.findByMemberId(memberId);
-        return loans.stream().map(loan -> {
-            DtoLoan dtoLoan = new DtoLoan();
-            BeanUtils.copyProperties(loan, dtoLoan);
-            
-            DtoBook dtoBook = new DtoBook();
-            BeanUtils.copyProperties(loan.getBook(), dtoBook);
-            dtoLoan.setBook(dtoBook);
-            
-            return dtoLoan;
-        }).collect(Collectors.toList());
+       return loanMapper.toDtoLoan(loans);
     }
 
     @Override
@@ -107,39 +97,39 @@ public class LoanServiceImpl implements ILoanService {
         bookRepository.save(book);
 
         loan.setReturnDate(LocalDate.now());
-        Loan updatedLoan = loanRepository.save(loan);
+     //   Loan updatedLoan = loanRepository.save(loan);
 
-        DtoLoan dtoLoan = new DtoLoan();
-        BeanUtils.copyProperties(updatedLoan, dtoLoan);
-        
-        DtoBook dtoBook = new DtoBook();
-        BeanUtils.copyProperties(book, dtoBook);
-        dtoLoan.setBook(dtoBook);
-        
-        DtoMember dtoMember = new DtoMember();
-        BeanUtils.copyProperties(loan.getMember(), dtoMember);
-        dtoLoan.setMember(dtoMember);
-
-        return dtoLoan;
+//        DtoLoan dtoLoan = new DtoLoan();
+//        BeanUtils.copyProperties(updatedLoan, dtoLoan);
+//
+//        DtoBook dtoBook = new DtoBook();
+//        BeanUtils.copyProperties(book, dtoBook);
+//        dtoLoan.setBook(dtoBook);
+//
+//        DtoMember dtoMember = new DtoMember();
+//        BeanUtils.copyProperties(loan.getMember(), dtoMember);
+//        dtoLoan.setMember(dtoMember);
+        return loanMapper.toDtoLoan(loanRepository.save(loan));
     }
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     public List<DtoLoan> getAllLoans() {
         List<Loan> loans = loanRepository.findAll();
-        return loans.stream().map(loan -> {
-            DtoLoan dtoLoan = new DtoLoan();
-            BeanUtils.copyProperties(loan, dtoLoan);
-            
-            DtoBook dtoBook = new DtoBook();
-            BeanUtils.copyProperties(loan.getBook(), dtoBook);
-            dtoLoan.setBook(dtoBook);
-            
-            DtoMember dtoMember = new DtoMember();
-            BeanUtils.copyProperties(loan.getMember(), dtoMember);
-            dtoLoan.setMember(dtoMember);
-            
-            return dtoLoan;
-        }).collect(Collectors.toList());
+//        return loans.stream().map(loan -> {
+//            DtoLoan dtoLoan = new DtoLoan();
+//            BeanUtils.copyProperties(loan, dtoLoan);
+//
+//            DtoBook dtoBook = new DtoBook();
+//            BeanUtils.copyProperties(loan.getBook(), dtoBook);
+//            dtoLoan.setBook(dtoBook);
+//
+//            DtoMember dtoMember = new DtoMember();
+//            BeanUtils.copyProperties(loan.getMember(), dtoMember);
+//            dtoLoan.setMember(dtoMember);
+//
+//            return dtoLoan;
+//        }).collect(Collectors.toList());
+        return loanMapper.toDtoLoan(loans);
     }
 }

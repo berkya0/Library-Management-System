@@ -5,6 +5,7 @@ import com.berkaykomur.dto.DtoUserIU;
 import com.berkaykomur.exception.BaseException;
 import com.berkaykomur.exception.ErrorMessage;
 import com.berkaykomur.exception.MessagesType;
+import com.berkaykomur.mapper.UserMapper;
 import com.berkaykomur.model.User;
 import com.berkaykomur.repository.MemberRepository;
 import com.berkaykomur.repository.UserRepository;
@@ -25,6 +26,7 @@ public class UserServiceImpl implements IUserService {
     private final UserRepository userRepository;
     private final MemberRepository memberRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     @Override
     @PreAuthorize("hasRole('ADMIN') or #dtoUserIU.username==authentication.principal.username")
@@ -38,7 +40,8 @@ public class UserServiceImpl implements IUserService {
         if (dtoUserIU.getRole() != null) {
             user.setRole(dtoUserIU.getRole());
         }
-        return convertToDto(userRepository.save(user));
+        userRepository.save(user);
+        return userMapper.toDtoUser(user);
     }
     @Override
     @PreAuthorize("hasRole('ADMIN') or #id==authentication.principal.userId")

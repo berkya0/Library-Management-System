@@ -7,6 +7,7 @@ import com.berkaykomur.enums.Role;
 import com.berkaykomur.exception.BaseException;
 import com.berkaykomur.exception.ErrorMessage;
 import com.berkaykomur.exception.MessagesType;
+import com.berkaykomur.mapper.MemberMapper;
 import com.berkaykomur.model.Member;
 import com.berkaykomur.model.User;
 import com.berkaykomur.repository.MemberRepository;
@@ -28,13 +29,15 @@ public class MemberService implements IMemberService {
 
     private final MemberRepository memberRepository;
     private final UserRepository userRepository;
+    private final MemberMapper memberMapper;
 
     @Override
     @Transactional(readOnly = true)
     public DtoMember findMemberById(Long id) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType. NO_RECORD_EXIST,id.toString())));
-        return convertToDto(member);
+        DtoMember dtoMember = memberMapper.toDtoMember(member);
+        return dtoMember;
     }
 
     @Override
@@ -42,19 +45,15 @@ public class MemberService implements IMemberService {
     public DtoMember updateMemberById(Long memberId, DtoMemberIU dtoMemberIU) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType. NO_RECORD_EXIST,memberId.toString())));
-        member.setFullName(dtoMemberIU.getFullName());
-        member.setEmail(dtoMemberIU.getEmail());
-        member.setPhoneNumber(dtoMemberIU.getPhoneNumber());
-        return convertToDto(memberRepository.save(member));
+        memberMapper.updateMemberFromDto(dtoMemberIU, member);
+        return memberMapper.toDtoMember(memberRepository.save(member));
     }
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly=true)
     public List<DtoMember> findAllMembers() {
-        return memberRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        return memberMapper.toDtoListMember(memberRepository.findAll());
     }
 
     @Override
@@ -67,12 +66,11 @@ public class MemberService implements IMemberService {
         if (user.getMember() == null) {
             throw new BaseException(new ErrorMessage(MessagesType.NO_RECORD_EXIST, "Kullanıcıya ait member bilgisi bulunamadı"));
         }
-        return convertToDto(user.getMember());
+        return memberMapper.toDtoMember(user.getMember());
     }
     private DtoMember convertToDto(Member member) {
         DtoMember dto = new DtoMember();
         BeanUtils.copyProperties(member, dto);
-
         if (member.getUser() != null) {
             DtoUser userDto = new DtoUser();
             BeanUtils.copyProperties(member.getUser(), userDto);
@@ -91,7 +89,7 @@ public class MemberService implements IMemberService {
         }
         user.setRole(newRole);
         userRepository.save(user);
-        return convertToDto(user.getMember());
+        return memberMapper.toDtoMember(user.getMember());
     }
     @Override
     @PreAuthorize("hasRole('ADMIN')")
