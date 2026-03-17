@@ -15,6 +15,7 @@ import java.util.List;
 @Setter
 public class CustomUserDetails implements UserDetails {
 
+    private User user;
     private Long userId;
     private Long memberId;
     private String username;
@@ -22,6 +23,7 @@ public class CustomUserDetails implements UserDetails {
     private Role role;
 
     public CustomUserDetails(User user ) {
+        this.user = user;
         this.userId = user.getId();
         this.username = user.getUsername();
         this.password = user.getPassword();
@@ -31,19 +33,19 @@ public class CustomUserDetails implements UserDetails {
         } else {
             this.memberId = null;
         }
-
     }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
+
     @Override
     public boolean isAccountNonExpired() { return true; }
     @Override
     public boolean isAccountNonLocked() { return true; }
     @Override
     public boolean isCredentialsNonExpired() { return true; }
-
     @Override
     public boolean isEnabled() { return true; }
 }
