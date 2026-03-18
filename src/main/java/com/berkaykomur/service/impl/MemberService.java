@@ -54,7 +54,7 @@ public class MemberService implements IMemberService {
     @Transactional(readOnly=true)
     @PreAuthorize("#username==authentication.principal.username")
     public DtoMember findMemberByUsername(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameAndIsActiveTrue(username)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType. NO_RECORD_EXIST,username)));
 
         if (user.getMember() == null) {

@@ -28,7 +28,7 @@ public class UserServiceImpl implements IUserService {
     @Override
     @PreAuthorize("#dtoUserIU.username==authentication.principal.username")
     public DtoUser updateUser(DtoUserIU dtoUserIU) {
-        User user = userRepository.findByUsername(dtoUserIU.getUsername())
+        User user = userRepository.findByUsernameAndIsActiveTrue(dtoUserIU.getUsername())
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType. NO_RECORD_EXIST, dtoUserIU.getUsername())));
         userMapper.updateUser(dtoUserIU, user);
         if (dtoUserIU.getPassword() != null && !dtoUserIU.getPassword().isBlank()) {

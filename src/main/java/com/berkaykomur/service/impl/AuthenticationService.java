@@ -17,6 +17,8 @@ import com.berkaykomur.service.IAuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -107,15 +109,13 @@ public class AuthenticationService implements IAuthenticationService {
     @Override
     public AuthResponse authenticate(AuthRequest request) {
         try {
-
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             String accessToken = jwtService.generateToken(userDetails);
-            CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-            RefreshToken refreshToken = refreshTokenRepository.save(createRefreshToken(customUserDetails.getUser()));
+            RefreshToken refreshToken = refreshTokenRepository.save(createRefreshToken(userDetails.getUser()));
             return new AuthResponse(
                     accessToken,
                     refreshToken.getRefreshToken(),
@@ -123,9 +123,14 @@ public class AuthenticationService implements IAuthenticationService {
                     userDetails.getRole(),
                     jwtService.accsessTokenExpiration
             );
-        } catch (Exception e) {
-            throw new BaseException(new ErrorMessage(MessagesType.USERNAME_OR_PASSWORD_INVALID,""));
-        }
+        }catch (BadCredentialsException | InternalAuthenticationServiceException e) {
+            e.printStackTrace();
+        throw new BaseException(new ErrorMessage(MessagesType.USERNAME_OR_PASSWORD_INVALID, null));
+    } catch (Exception e) {
+            e.printStackTrace();
+
+        throw new BaseException(new ErrorMessage(MessagesType.GENERAL_EXCEPTION, e.getMessage()));
+    }
     }
 
 }
