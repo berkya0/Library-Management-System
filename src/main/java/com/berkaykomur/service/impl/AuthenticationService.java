@@ -77,7 +77,6 @@ public class AuthenticationService implements IAuthenticationService {
 
     @Override
     public AuthResponse refreshToken(RefreshTokenRequest request) {
-
         RefreshToken refreshToken = refreshTokenRepository.findByRefreshTokenAndIsActiveTrue(request.getRefreshToken())
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.REFRESH_TOKEN_INVALID, "")));
 

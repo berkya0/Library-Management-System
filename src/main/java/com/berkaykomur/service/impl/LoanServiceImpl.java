@@ -34,6 +34,8 @@ public class LoanServiceImpl implements ILoanService {
     private final MemberRepository memberRepository;
     private final LoanRepository loanRepository;
     private final LoanMapper loanMapper;
+
+    private static final int MAX_BOOK_LIMIT=5;
     
     @Override
     @Transactional
@@ -41,20 +43,25 @@ public class LoanServiceImpl implements ILoanService {
     public DtoLoan loanBook(LoanRequest request) {
         Book book = bookRepository.findById(request.getBookId())
             .orElseThrow(() -> new BaseException(
-                new ErrorMessage(MessagesType.NO_RECORD_EXIST, 
-                "Kitap bulunamadı: " + request.getBookId())));
+                new ErrorMessage(MessagesType.NO_RECORD_EXIST,request.getBookId().toString())));
 
         if (!book.isAvailable()) {
             throw new BaseException(
-                new ErrorMessage(MessagesType.ALREADY_LOANED, 
-                "Bu kitap zaten ödünç alınmış"));
+                new ErrorMessage(MessagesType.ALREADY_LOANED, request.getBookId().toString()));
         }
 
         Member member = memberRepository.findById(request.getMemberId())
             .orElseThrow(() -> new BaseException(
-                new ErrorMessage(MessagesType.NO_RECORD_EXIST,
-                "Üye bulunamadı: " + request.getMemberId())));
+                new ErrorMessage(MessagesType.MEMBER_NOT_FOUND, request.getMemberId().toString())));
 
+        int overLoanCount=loanRepository.countOverDueLoans(member.getId(), LocalDate.now());
+        if(overLoanCount>0){
+            throw new BaseException(new ErrorMessage(MessagesType.OVERDUE_LIMIT_EXCEEDED,null));
+        }
+        int totalLoan=loanRepository.countByMemberIdAndReturnDateIsNull(member.getId());
+        if(totalLoan>=MAX_BOOK_LIMIT) {
+            throw new BaseException(new ErrorMessage(MessagesType.MAX_BOOK_LIMIT_EXCEEDED,"Mevcut kitap sayın: "+totalLoan));
+        }
         book.setAvailable(false);
         bookRepository.save(book);
 
@@ -77,14 +84,13 @@ public class LoanServiceImpl implements ILoanService {
     @PreAuthorize("#memberId == authentication.principal.memberId")
     public DtoLoan returnBook(Long memberId, Long loanId) {
         Loan loan = loanRepository.findById(loanId)
+                .filter(l->l.getMember().getId().equals(memberId))
             .orElseThrow(() -> new BaseException(
-                new ErrorMessage(MessagesType.NO_RECORD_EXIST, 
-                "Ödünç kaydı bulunamadı: " + loanId)));
+                new ErrorMessage(MessagesType.NO_RECORD_EXIST, loanId.toString())));
 
         Book book = loan.getBook();
         book.setAvailable(true);
         bookRepository.save(book);
-
         loan.setReturnDate(LocalDate.now());
         return loanMapper.toDtoLoan(loanRepository.save(loan));
     }

@@ -1,6 +1,5 @@
 package com.berkaykomur.dto;
 
-import com.berkaykomur.enums.Role;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -16,9 +15,5 @@ public class DtoUserIU {
 	private String username;
     @NotBlank
 	private String password;
-    @NotBlank
-	private Role role;
-    @NotBlank
-	private DtoMember member;
 
 }

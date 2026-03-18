@@ -32,14 +32,14 @@ public class MemberService implements IMemberService {
     @Transactional(readOnly = true)
     public DtoMember findMemberById(Long id) {
         Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType. NO_RECORD_EXIST,id.toString())));
+                .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.MEMBER_NOT_FOUND,id.toString())));
         return memberMapper.toDtoMember(member);
     }
     @Override
     @PreAuthorize("hasRole('ADMIN') or #memberId==authentication.principal.memberId")
     public DtoMember updateMemberById(Long memberId, DtoMemberIU dtoMemberIU) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType. NO_RECORD_EXIST,memberId.toString())));
+                .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.MEMBER_NOT_FOUND,memberId.toString())));
         memberMapper.updateMemberFromDto(dtoMemberIU, member);
         return memberMapper.toDtoMember(memberRepository.save(member));
     }
@@ -55,10 +55,10 @@ public class MemberService implements IMemberService {
     @PreAuthorize("#username==authentication.principal.username")
     public DtoMember findMemberByUsername(String username) {
         User user = userRepository.findByUsernameAndIsActiveTrue(username)
-                .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType. NO_RECORD_EXIST,username)));
+                .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.USER_NOT_FOUND,username)));
 
         if (user.getMember() == null) {
-            throw new BaseException(new ErrorMessage(MessagesType.NO_RECORD_EXIST, "Kullanıcıya ait member bilgisi bulunamadı"));
+            throw new BaseException(new ErrorMessage(MessagesType.MEMBER_NOT_FOUND,null));
         }
         return memberMapper.toDtoMember(user.getMember());
     }
@@ -66,9 +66,9 @@ public class MemberService implements IMemberService {
     @PreAuthorize("hasRole('ADMIN')")
     public DtoMember updateMemberRole(Long id, UpdateRoleRequest role) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.NO_RECORD_EXIST, id.toString())));
+                .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.USER_NOT_FOUND, id.toString())));
         if (user.getMember() == null) {
-            throw new BaseException(new ErrorMessage(MessagesType.NO_RECORD_EXIST, "Kullanıcıya ait member bilgisi bulunamadı"));
+            throw new BaseException(new ErrorMessage(MessagesType.MEMBER_NOT_FOUND, null));
         }
         user.setRole(role.getRole());
         userRepository.save(user);
@@ -80,7 +80,7 @@ public class MemberService implements IMemberService {
     public Long findMemberIdByUsername(String username) {
         return memberRepository.findMemberIdByUsername(username)
                 .orElseThrow(() -> new BaseException(
-                        new ErrorMessage(MessagesType.NO_RECORD_EXIST, "Üye bulunamadı: " + username)));
+                        new ErrorMessage(MessagesType.MEMBER_NOT_FOUND, username)));
     }
 
 }
