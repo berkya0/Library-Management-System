@@ -41,7 +41,7 @@ public class AuthenticationService implements IAuthenticationService {
     private final UserMapper userMapper;
 
     private User createUser(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
+        if (userRepository.existsByUsernameAndIsActiveTrue(request.getUsername())) {
             throw new BaseException(new ErrorMessage((MessagesType.USERNAME_ALREADY_TAKEN), request.getUsername()));
         }
         User user = new User();
@@ -76,7 +76,7 @@ public class AuthenticationService implements IAuthenticationService {
     @Override
     public AuthResponse refreshToken(RefreshTokenRequest request) {
 
-        RefreshToken refreshToken = refreshTokenRepository.findByRefreshToken(request.getRefreshToken())
+        RefreshToken refreshToken = refreshTokenRepository.findByRefreshTokenAndIsActiveTrue(request.getRefreshToken())
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.REFRESH_TOKEN_INVALID, "")));
 
         if (!isRefreshTokenValid(refreshToken.getExpiredDate())) {
@@ -85,7 +85,8 @@ public class AuthenticationService implements IAuthenticationService {
         User user = refreshToken.getUser();
         CustomUserDetails customUserDetails = new CustomUserDetails(user);
         String accessToken = jwtService.generateToken(customUserDetails);
-        refreshTokenRepository.delete(refreshToken);
+        refreshToken.setActive(false);
+        refreshTokenRepository.save(refreshToken);
         RefreshToken newRefreshToken = refreshTokenRepository.save(createRefreshToken(user));
 
         return new AuthResponse(

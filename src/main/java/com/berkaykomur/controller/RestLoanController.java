@@ -9,7 +9,6 @@ import com.berkaykomur.service.ILoanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,16 +17,17 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/rest/api/loan")
-public class RestLoanControllerImpl {
+public class RestLoanController {
 
     private final ILoanService loanService;
 
-    @PostMapping("/borrow")
-    public ResponseEntity<DtoLoan> loanBook(@Valid @RequestBody LoanRequest request) {
+    @PostMapping
+    public ResponseEntity<DtoLoan> borrowBook(@Valid @RequestBody LoanRequest request) {
         return ResponseEntity.ok(loanService.loanBook(request));
     }
 
     @GetMapping("/my-loans")
+
     public ResponseEntity<List<DtoLoan>> getMyLoans(@AuthenticationPrincipal CustomUserDetails currentUser) {
         return ResponseEntity.ok(loanService.getLoansByMemberId(currentUser.getMemberId()));
     }

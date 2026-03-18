@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/rest/api/book")
-public class RestBookImpl {
+public class RestBookController {
 
 	private final IBookService bookService;
 
@@ -28,9 +28,9 @@ public class RestBookImpl {
 	}
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+    public ResponseEntity<String> deleteBook(@PathVariable Long id) {
         bookService.deleteBook(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("Book deleted successfully");
     }
 	@PostMapping("/save")
 	public ResponseEntity<DtoBook> saveBook(@Valid @RequestBody DtoBookIU dtoBookIU) {

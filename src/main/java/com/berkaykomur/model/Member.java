@@ -1,22 +1,16 @@
 package com.berkaykomur.model;
 
-import java.util.Date;
-import java.util.List;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-//Member.java
+import java.util.Date;
+import java.util.List;
+
 @Entity
-@Table(name = "member",
-indexes = {
-        @Index(name = "idx_fullName",columnList = "full_name"),
-        @Index(name = "idx_email",columnList = "email"),
-        @Index(name = "idx_phoneNumber",columnList = "phone_number")
-})
+@Table(name = "member")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -37,6 +31,6 @@ public class Member extends BaseEntity {
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private List<Loan> loans;
 }

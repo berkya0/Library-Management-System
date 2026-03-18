@@ -1,15 +1,14 @@
 package com.berkaykomur.repository;
 
-import java.util.Optional;
-
+import com.berkaykomur.model.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.berkaykomur.model.RefreshToken;
+import java.util.Optional;
 
 
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
-	Optional<RefreshToken> findByRefreshToken(String refreshToken);
+	Optional<RefreshToken> findByRefreshTokenAndIsActiveTrue(String refreshToken);
 
 }

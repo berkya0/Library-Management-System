@@ -2,9 +2,7 @@ package com.berkaykomur.service.impl;
 
 import com.berkaykomur.dto.DtoMember;
 import com.berkaykomur.dto.DtoMemberIU;
-import com.berkaykomur.dto.DtoUser;
 import com.berkaykomur.dto.UpdateRoleRequest;
-import com.berkaykomur.enums.Role;
 import com.berkaykomur.exception.BaseException;
 import com.berkaykomur.exception.ErrorMessage;
 import com.berkaykomur.exception.MessagesType;
@@ -15,13 +13,11 @@ import com.berkaykomur.repository.MemberRepository;
 import com.berkaykomur.repository.UserRepository;
 import com.berkaykomur.service.IMemberService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,10 +33,8 @@ public class MemberService implements IMemberService {
     public DtoMember findMemberById(Long id) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType. NO_RECORD_EXIST,id.toString())));
-        DtoMember dtoMember = memberMapper.toDtoMember(member);
-        return dtoMember;
+        return memberMapper.toDtoMember(member);
     }
-
     @Override
     @PreAuthorize("hasRole('ADMIN') or #memberId==authentication.principal.memberId")
     public DtoMember updateMemberById(Long memberId, DtoMemberIU dtoMemberIU) {
@@ -56,7 +50,6 @@ public class MemberService implements IMemberService {
     public List<DtoMember> findAllMembers() {
         return memberMapper.toDtoListMember(memberRepository.findAll());
     }
-
     @Override
     @Transactional(readOnly=true)
     @PreAuthorize("#username==authentication.principal.username")
@@ -69,17 +62,6 @@ public class MemberService implements IMemberService {
         }
         return memberMapper.toDtoMember(user.getMember());
     }
-    private DtoMember convertToDto(Member member) {
-        DtoMember dto = new DtoMember();
-        BeanUtils.copyProperties(member, dto);
-        if (member.getUser() != null) {
-            DtoUser userDto = new DtoUser();
-            BeanUtils.copyProperties(member.getUser(), userDto);
-            dto.setUser(userDto);
-        }
-        return dto;
-    }
-
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     public DtoMember updateMemberRole(Long id, UpdateRoleRequest role) {

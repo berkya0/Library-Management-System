@@ -6,13 +6,12 @@ import com.berkaykomur.service.IUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/rest/api/user")
-public class RestUserControllerImpl {
+public class RestUserController {
 
 	private final IUserService userService;
 	@PutMapping("/update")
@@ -20,9 +19,9 @@ public class RestUserControllerImpl {
 		return ResponseEntity.ok(userService.updateUser(dtoUserIU));
 	}
 	@DeleteMapping("/delete/{id}")
-	public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+	public ResponseEntity<String> deleteUser(@PathVariable Long id) {
 	    userService.deleteUserById(id);
-	    return ResponseEntity.ok().build();
+	    return ResponseEntity.ok("User deleted successfully");
 	}
 
 }

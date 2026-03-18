@@ -8,7 +8,6 @@ import com.berkaykomur.exception.MessagesType;
 import com.berkaykomur.mapper.BookMapper;
 import com.berkaykomur.model.Book;
 import com.berkaykomur.repository.BookRepository;
-import com.berkaykomur.repository.LoanRepository;
 import com.berkaykomur.service.IBookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +22,6 @@ import java.util.List;
 public class BookServiceImpl implements IBookService{
 
     private final BookRepository bookRepository;
-    private final LoanRepository loanRepository;
     private final BookMapper bookMapper;
 
     @Override
@@ -48,7 +46,6 @@ public class BookServiceImpl implements IBookService{
         return bookMapper.toDtoBook(bookRepository.save(saveBook));
     }
 
-
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
@@ -59,8 +56,8 @@ public class BookServiceImpl implements IBookService{
             throw new BaseException(new ErrorMessage(MessagesType.GENERAL_EXCEPTION,
                     "Ödünç alınmış kitap silinemez. Önce kitabın iade edilmesi gerekir."));
         }
-        loanRepository.deleteByBookId(id);
-        bookRepository.delete(book);
+        book.setActive(false);
+        bookRepository.save(book);
     }
 
 }

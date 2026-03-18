@@ -62,17 +62,6 @@ public class LoanServiceImpl implements ILoanService {
         loan.setBook(book);
         loan.setMember(member);
         loan.setLoanDetails();
-//      //  Loan savedLoan = loanRepository.save(loan);
-//        DtoLoan dtoLoan = new DtoLoan();
-//        BeanUtils.copyProperties(savedLoan, dtoLoan);
-        
-//        DtoBook dtoBook = new DtoBook();
-//        BeanUtils.copyProperties(book, dtoBook);
-//        dtoLoan.setBook(dtoBook);
-//
-//        DtoMember dtoMember = new DtoMember();
-//        BeanUtils.copyProperties(member, dtoMember);
-//        dtoLoan.setMember(dtoMember);
         return loanMapper.toDtoLoan(loanRepository.save(loan));
     }
     @Override
@@ -97,18 +86,6 @@ public class LoanServiceImpl implements ILoanService {
         bookRepository.save(book);
 
         loan.setReturnDate(LocalDate.now());
-     //   Loan updatedLoan = loanRepository.save(loan);
-
-//        DtoLoan dtoLoan = new DtoLoan();
-//        BeanUtils.copyProperties(updatedLoan, dtoLoan);
-//
-//        DtoBook dtoBook = new DtoBook();
-//        BeanUtils.copyProperties(book, dtoBook);
-//        dtoLoan.setBook(dtoBook);
-//
-//        DtoMember dtoMember = new DtoMember();
-//        BeanUtils.copyProperties(loan.getMember(), dtoMember);
-//        dtoLoan.setMember(dtoMember);
         return loanMapper.toDtoLoan(loanRepository.save(loan));
     }
 
@@ -116,20 +93,6 @@ public class LoanServiceImpl implements ILoanService {
     @PreAuthorize("hasRole('ADMIN')")
     public List<DtoLoan> getAllLoans() {
         List<Loan> loans = loanRepository.findAll();
-//        return loans.stream().map(loan -> {
-//            DtoLoan dtoLoan = new DtoLoan();
-//            BeanUtils.copyProperties(loan, dtoLoan);
-//
-//            DtoBook dtoBook = new DtoBook();
-//            BeanUtils.copyProperties(loan.getBook(), dtoBook);
-//            dtoLoan.setBook(dtoBook);
-//
-//            DtoMember dtoMember = new DtoMember();
-//            BeanUtils.copyProperties(loan.getMember(), dtoMember);
-//            dtoLoan.setMember(dtoMember);
-//
-//            return dtoLoan;
-//        }).collect(Collectors.toList());
         return loanMapper.toDtoLoan(loans);
     }
 }
