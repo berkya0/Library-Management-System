@@ -7,7 +7,7 @@ This project demonstrates **JWT-based authentication**, **role-based authorizati
 ## 🚀 Features
 * 🔐 JWT-based Authentication & Authorization
 * 👥 Role-based Access Control (ADMIN, USER)
-* 📖 Book Management (CRUD operations)
+* 📖 Book Management 
 * 🧑 Member Management
 * 🔄 Loan System (Borrow / Return books)
 * ♻️ Refresh Token Mechanism
@@ -151,6 +151,7 @@ You can test the API using:
 
 ### 🔐 Authentication – Login
 Authenticate the user and retrieve JWT tokens.
+
 **Request**
 
 ```json
@@ -159,20 +160,28 @@ Authenticate the user and retrieve JWT tokens.
   "password": "password123"
 }
 ```
-**Response** <img src="images/authResponse.png" width="600">
+**Response** 
+
+
+<img src="images/authResponse.png" width="600">
 
 
 ---
-### 🔒 Borrow Book (Protected)
+### 🔒 Borrow Book 
 Borror book using a valid access token.
+
 **Request**
+
 ```json
 {
    "bookId": 7,
    "memberId": 1
 }
 ```
-**Response** <img src="images/loanResponse.png" width="600">
+**Response** 
+
+
+<img src="images/loanResponse.png" width="600">
 
 ---
 
@@ -189,34 +198,54 @@ Example of validation or authorization error response.
 }
 ```
 
-**Response** <img src="images/loanMemberIdError.png" width="600">
+**Response** 
+
+
+<img src="images/loanMemberIdError.png" width="600">
 
 
 **Request**
+Not: This member id does not belong current member
 ```json
 {
-  "memberId": 5,
+  "memberId": 5, 
   "bookId": 5
 }
 ```
 
-**Response** <img src="images/unAuthError.png" width="600">
+**Response** 
+
+
+<img src="images/unauthError.png" width="600">
+
+### Authentication
+- POST /rest/api/user/register
+- POST /rest/api/authenticate
+- POST /rest/api/refresh-token
+
+### USER
+- PUT /rest/api/user/update
+- DELETE /rest/api/user/delete/{userId}
 
 ### Book
-- GET /books
-- POST /books (ADMIN)
-- DELETE /books/{id} (ADMIN)
+- GET /rest/book/get/{bookId}
+- GET /rest/api/book/get/list
+- POST /rest/api/book/save (ADMIN)
+- DELETE /rest/api/book/delete/{bookId} (ADMIN)
 
 ### Loan
-- POST /loans/borrow
-- POST /loans/return
+- POST /rest/api/loan
+- GET /rest/api/loan/my-loans
+- POST /rest/api/loan/return/{loanId}
+- GET /rest/api/loan/all
 
-📸 Example Requests:
-
-<img src="images/get-book-postman.png" width="400">
-<img src="images/update-member.png" width="400">
-<img src="images/update-member-error.png" width="400">
-
+### Member
+- GET /rest/api/member/get/{memberId}
+- PUT /rest/api/member/update/{memberId}
+- GET /rest/api/member/get/list
+- GET /rest/api/member/me
+- PUT //rest/api/member/update-role/{memberId}
+  
 ---
 
 ## 🎯 What I Practiced
