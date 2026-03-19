@@ -1,9 +1,7 @@
 
 package com.berkaykomur.service.impl;
 
-import com.berkaykomur.dto.DtoBook;
 import com.berkaykomur.dto.DtoLoan;
-import com.berkaykomur.dto.DtoMember;
 import com.berkaykomur.dto.LoanRequest;
 import com.berkaykomur.exception.BaseException;
 import com.berkaykomur.exception.ErrorMessage;
@@ -17,14 +15,12 @@ import com.berkaykomur.repository.LoanRepository;
 import com.berkaykomur.repository.MemberRepository;
 import com.berkaykomur.service.ILoanService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -84,10 +80,11 @@ public class LoanServiceImpl implements ILoanService {
     @PreAuthorize("#memberId == authentication.principal.memberId")
     public DtoLoan returnBook(Long memberId, Long loanId) {
         Loan loan = loanRepository.findById(loanId)
-                .filter(l->l.getMember().getId().equals(memberId))
             .orElseThrow(() -> new BaseException(
                 new ErrorMessage(MessagesType.NO_RECORD_EXIST, loanId.toString())));
-
+        if(!memberId.equals(loan.getMember().getId())) {
+            throw new BaseException(new ErrorMessage(MessagesType.UNAUTHORIZED_ACTION,null));
+        }
         Book book = loan.getBook();
         book.setAvailable(true);
         bookRepository.save(book);

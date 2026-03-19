@@ -624,20 +624,20 @@ table tbody tr:last-child td {
 	.loans-search-section {
 	        padding: 15px;
 	    }
-	    
+
 	    .loans-search-section .search-filters {
 	        flex-direction: column;
 	        align-items: stretch;
 	    }
-	    
+
 	    .loans-search-section .search-container {
 	        min-width: 100%;
 	    }
-	    
+
 	    #filterStatus {
 	        width: 100%;
 	    }
-	    
+
 	    #loanSearch, #filterStatus {
 	        width: 100% !important;
 	        margin-top: 10px;
@@ -645,20 +645,20 @@ table tbody tr:last-child td {
 	.members-search-section {
 	       padding: 15px;
 	   }
-	   
+
 	   .members-search-section .search-filters {
 	       flex-direction: column;
 	       align-items: stretch;
 	   }
-	   
+
 	   .members-search-section .search-container {
 	       min-width: 100%;
 	   }
-	   
+
 	   #filterRole {
 	       width: 100%;
 	   }
-	   
+
 	   #memberSearch, #filterRole {
 	       width: 100% !important;
 	       margin-top: 10px;
@@ -667,65 +667,65 @@ table tbody tr:last-child td {
         width: 95%;
         padding: 20px;
     }
-    
+
     .tabs {
         flex-wrap: wrap;
         justify-content: center;
     }
-    
+
     .tab-btn {
         margin-bottom: 5px;
         padding: 10px 15px;
         font-size: 14px;
     }
-    
+
     table {
         display: block;
         overflow-x: auto;
     }
-    
+
     h2 {
         font-size: 24px;
         padding-bottom: 10px;
     }
-    
+
     h3 {
         font-size: 20px;
     }
-    
+
     .search-filters {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .search-container {
         min-width: 100%;
     }
-    
+
     #searchCategory {
         width: 100%;
     }
-    
+
     .books-search-section {
         padding: 15px;
     }
-    
+
     .btn-clear {
         margin-left: 0;
         margin-top: 10px;
         width: 100%;
     }
-    
+
     #bookSearch, #searchCategory {
         width: 100% !important;
         margin-top: 10px;
     }
-    
+
     #books-tab > div:first-child {
         flex-direction: column;
         align-items: flex-start !important;
     }
-    
+
     #books-tab h3 {
         margin-bottom: 10px;
     }
@@ -803,7 +803,7 @@ table tbody tr:last-child td {
 	        margin: 15px 0;
 	        padding: 12px;
 	    }
-	    
+
 	    #loanSearch, #filterStatus {
 	        height: 42px;
 	        font-size: 14px;
@@ -812,7 +812,7 @@ table tbody tr:last-child td {
 	       margin: 15px 0;
 	       padding: 12px;
 	   }
-	   
+
 	   #memberSearch, #filterRole {
 	       height: 42px;
 	       font-size: 14px;
@@ -821,12 +821,12 @@ table tbody tr:last-child td {
         margin: 15px 0;
         padding: 12px;
     }
-    
+
     #bookSearch, #searchCategory {
         height: 42px;
         font-size: 14px;
     }
-    
+
     #bookSearch {
         width: 100% !important;
     }

@@ -21,7 +21,7 @@ public enum MessagesType {
     OVERDUE_LIMIT_EXCEEDED("1014","Teslim tarihi geçmiş kitabınız bulunmaktatır kitap alamazsınız",HttpStatus.BAD_REQUEST),
     NO_RECORD_EXIST("1004", "Kayıt bulunamadı", HttpStatus.NOT_FOUND),
     ALREADY_LOANED("1013", "Bu kitap başkası tarafından zaten ödünç alınmış", HttpStatus.CONFLICT),
-    UNAUTHORIZED_ACTIO("1012", "Bunu yapmaya yetkin yok!", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED_ACTION("1012", "Bunu yapmaya yetkin yok!", HttpStatus.UNAUTHORIZED),
     GENERAL_EXCEPTION("1011", "Genel bir hata oluştu", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;
