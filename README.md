@@ -1,104 +1,116 @@
 # 📚 Library Management System (Spring Boot)
-A secure and layered **Library Management System** built with Spring Boot, implementing authentication, authorization (JWT), role-based access control, and a structured REST API architecture.
+A secure and production-ready **Library Management System** built with Spring Boot.
+This project demonstrates **JWT-based authentication**, **role-based authorization**, and a clean **layered REST API architecture**.
 
 ---
 
 ## 🚀 Features
-- 🔐 JWT Authentication & Authorization
-- 👥 Role-based access control (ADMIN, USER)
-- 📖 Book management 
-- 🧑 Member management
-- 🔄 Loan system (borrow / return books)
-- ♻️ Refresh token mechanism
-- 🧩 Global exception handling
-- 🏗 Layered Architecture (Controller → Service → Repository)
-- 📦 DTO-based data transfer
-- 🛡 Spring Security integration
+* 🔐 JWT-based Authentication & Authorization
+* 👥 Role-based Access Control (ADMIN, USER)
+* 📖 Book Management (CRUD operations)
+* 🧑 Member Management
+* 🔄 Loan System (Borrow / Return books)
+* ♻️ Refresh Token Mechanism
+* 🧩 Global Exception Handling
+* 🏗 Clean Layered Architecture (Controller → Service → Repository)
+* 📦 DTO-based Data Transfer
+* 🛡 Spring Security Integration
 
+### 🧪 Testing
+* ✅ **Unit Tests** → Business logic tested with JUnit 5 & Mockito
+* 🔐 **Integration Tests** → End-to-end testing of secured API endpoints
 ---
 
 ## 🏛 Project Architecture
-
-The project follows a clean layered architecture.
+The project follows a clean and maintainable layered architecture:
 
 <img src="images/architecture.png" alt="Architecture" width="700">
 
 ---
 
 ## 📂 Package Structure
-- `config` → Security & application configuration  
-- `controller` → REST endpoints  
-- `dto` → Data Transfer Objects  
-- `enums` → Role definitions  
-- `exception` → Custom exception structure  
-- `handler` → Global exception handler  
-- `jwt` → JWT filter & token service  
-- `model` → Entity classes  
-- `repository` → JPA repositories  
-- `service` → Business logic layer  
+
+* `config` → Security & application configuration
+* `controller` → REST API endpoints
+* `dto` → Data Transfer Objects
+* `enums` → Role definitions
+* `exception` → Custom exception classes
+* `handler` → Global exception handling
+* `jwt` → JWT filter & token service
+* `mapper` → DTO ↔ Entity mapping
+* `model` → Entity classes
+* `repository` → JPA repositories
+* `service` → Business logic layer
 
 ---
 
 ## 🔐 Authentication Flow
-1. User registers  
-2. User logs in  
-3. Server returns:  
-   - Access Token (JWT)  
-   - Refresh Token  
-4. Access token is used for protected endpoints  
-5. When expired → refresh token generates new access token  
 
-Security is configured using:  
+1. User registers
+2. User logs in
+3. Server returns:
 
-- `SecurityConfig`  
-- `JwtAuthenticationFilter`  
-- `JwtService`  
-- `UserSecurityService` (for ownership checks)  
+   * Access Token (JWT)
+   * Refresh Token
+4. Access token is used for protected endpoints
+5. When expired → Refresh token generates a new access token
+
+Security configuration includes:
+
+* `SecurityConfig`
+* `JwtAuthenticationFilter`
+* `JwtService`
+* `CustomUserDetails`
 
 ---
 
 ## 🧠 Roles & Authorization
 
 ### ADMIN
-- Full access to all endpoints
+
+* Full access to almost all endpoints
 
 ### USER
-- Limited access  
-- Can only access their own data
+
+* Limited access
+* Can only access their own data
 
 **Example:**
 
 ```java
-@PreAuthorize("hasRole('ADMIN') or @userSecurityService.isOwner(authentication, #id)")
+@PreAuthorize("hasRole('ADMIN') or #request.memberId == authentication.principal.memberId")
 ```
 
+---
+
 ## 📚 Core Modules
+
 ### 📖 Book
-- Create book  
-- Update book  
-- Delete book  
-- List all books  
+* Create book
+* Update book
+* Delete book
+* List all books
 
 ### 🧑 Member
-- Register member  
-- Update member  
-- List members  
+* Register member
+* Update member
+* List members
 
 ### 🔄 Loan
-- Borrow book  
-- Return book  
-- Track active loans  
+* Borrow book
+* Return book
+* Track active loans
 
 ---
 
 ## 🛠 Technologies Used
-- Java 17+  
-- Spring Boot  
-- Spring Security  
-- Spring Data JPA  
-- JWT  
-- Maven  
-- PostgreSQL (configurable)  
+* Java 17+
+* Spring Boot
+* Spring Security
+* Spring Data JPA
+* JWT
+* Maven
+* PostgreSQL (configurable)
 
 ---
 
@@ -108,15 +120,17 @@ Security is configured using:
 ```bash
 git clone https://github.com/berkya0/Library-Management-System.git
 ```
-2️⃣ Configure Database
-Update application.properties:
+
+### 2️⃣ Configure Database
+Update `application.properties`:
+
 ```
 spring.datasource.url=jdbc:postgresql://localhost:5432/library
 spring.datasource.username=your_username
 spring.datasource.password=your_password
 ```
 
-3️⃣ Run the project
+### 3️⃣ Run the project
 ```
 ./mvnw spring-boot:run
 ```
@@ -125,67 +139,100 @@ or
 mvn spring-boot:run
 ```
 
+---
+
 ## 🧪 API Testing
-The API can be tested using the following tools:
+You can test the API using:
 
-- **Postman** → Send HTTP requests (GET, POST, PUT, DELETE) 
-- **Browser** → For static authentication pages  
+* **Postman** → For sending HTTP requests (GET, POST, PUT, DELETE)
+* **Browser** → For basic authentication flows
+  
+## 📸 API Usage Examples
 
----
-📸 Postman Example
+### 🔐 Authentication – Login
+Authenticate the user and retrieve JWT tokens.
+**Request**
 
-<img src="images/get-book-postman.png" alt="Postman Example" width="400">
-<img src="images/update-member.png" alt="Postman Example" width="400">
-<img src="images/update-member-error.png" alt="Postman Error Example" width="400">
+```json
+{
+  "username": "berkya",
+  "password": "password123"
+}
+```
+**Response** <img src="images/authResponse.png" width="600">
 
-
-## 🌐 Available Static Pages
-The project includes simple frontend pages for authentication testing:
-
-- `/login.html` → User login page  
-- `/register.html` → User registration page  
-- `/dashboard.html` → Protected dashboard page (requires authentication)
- 
-📸 Dashboard Page
-
-<img src="images/profil.png" alt="Dashboard" width="500">
-
-<img src="images/member-management.png" alt="Dashboard" width="500">
-
-<img src="images/loans.png" alt="Dashboard" width="500">
-
-<img src="images/user-panel.png" alt="Dashboard" width="500">
 
 ---
-
-## 🎯 What I Practiced in This Project
-Through this project, I focused on:
-
-- Designing a secure REST API architecture  
-- Implementing JWT-based authentication from scratch  
-- Creating a refresh token mechanism  
-- Applying role-based and ownership-based authorization  
-- Structuring a layered architecture (Controller → Service → Repository)  
-- Implementing global exception handling  
-- Using DTOs to separate internal entities from API responses  
-- Integrating Spring Security with method-level protection  
+### 🔒 Borrow Book (Protected)
+Borror book using a valid access token.
+**Request**
+```json
+{
+   "bookId": 7,
+   "memberId": 1
+}
+```
+**Response** <img src="images/loanResponse.png" width="600">
 
 ---
 
-## 📌 Future Improvements
-Planned enhancements:
+### ❌ Error Handling Example
 
-- Add Swagger/OpenAPI documentation  
-- Implement pagination and sorting  
-- Add Docker support  
-- Write unit and integration tests  
-- Implement audit logging  
-- Set up CI/CD pipeline  
+Example of validation or authorization error response.
+
+**Request**
+
+```json
+{
+  "memberId": null,
+  "bookId": 5
+}
+```
+
+**Response** <img src="images/loanMemberIdError.png" width="600">
+
+
+**Request**
+```json
+{
+  "memberId": 5,
+  "bookId": 5
+}
+```
+
+**Response** <img src="images/unAuthError.png" width="600">
+
+### Book
+- GET /books
+- POST /books (ADMIN)
+- DELETE /books/{id} (ADMIN)
+
+### Loan
+- POST /loans/borrow
+- POST /loans/return
+
+📸 Example Requests:
+
+<img src="images/get-book-postman.png" width="400">
+<img src="images/update-member.png" width="400">
+<img src="images/update-member-error.png" width="400">
+
+---
+
+## 🎯 What I Practiced
+
+* Designing a secure REST API architecture
+* Implementing JWT authentication from scratch
+* Building a refresh token mechanism
+* Applying role-based & ownership-based authorization
+* Structuring scalable layered architecture
+* Implementing global exception handling
+* Using DTOs for clean API design
+* Securing endpoints with method-level authorization
 
 ---
 
 ## 👨‍💻 Author
 
-**Berkay Kömür**  
-Computer Engineering Student | Java & Spring Boot Enthusiast 🚀
-
+**Berkay Kömür**
+Computer Engineering Student | Java & Spring Boot Developer 🚀
