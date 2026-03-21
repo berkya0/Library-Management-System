@@ -1,6 +1,5 @@
 package com.berkaykomur.util;
 
-import com.berkaykomur.dto.LoanRequest;
 import com.berkaykomur.model.Book;
 import com.berkaykomur.model.Category;
 import com.berkaykomur.model.Loan;
@@ -16,24 +15,26 @@ import java.util.List;
 
 public class TestDataFactory {
 
-    public static Book createTestBook(){
+    public static Book createTestBook() {
         Book mockBook = new Book();
         mockBook.setAvailable(true);
         mockBook.setActive(true);
         mockBook.setAuthor("Author");
-        mockBook.setIsbnNo("1234567891234");
+        mockBook.setIsbnNo("ISBN-" + System.nanoTime());
         mockBook.setCategory(Category.ROMAN);
         mockBook.setTitle("Title");
         return mockBook;
-
     }
-    public static Member createTestMember(){
+
+    public static Member createTestMember() {
         Member mockMember = new Member();
-        mockMember.setEmail("email@email");
+
+        mockMember.setEmail("test-" + System.nanoTime() + "@email.com");
+        mockMember.setFullName("Full Name");
         mockMember.setActive(true);
         mockMember.setMembershipDate(Date.from(Instant.now()));
-        mockMember.setPhoneNumber("05055055551");
-
+        String randomPhone = "0505" + (System.nanoTime() % 10000000);
+        mockMember.setPhoneNumber(randomPhone);
         return mockMember;
     }
     public static Loan  createTestLoan(){

@@ -126,6 +126,7 @@ class LoanServiceImplIntegrationTest {
         Loan loan = new Loan();
         loan.setMember(memberB);
         loan.setBook(book);
+        loan.setLoanDetails();
         loan.setReturnDate(null);
         Loan savedLoan = loanRepository.save(loan);
 
@@ -142,5 +143,8 @@ class LoanServiceImplIntegrationTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+        loanRepository.deleteAll();
+        bookRepository.deleteAll();
+        memberRepository.deleteAll();
     }
 }
