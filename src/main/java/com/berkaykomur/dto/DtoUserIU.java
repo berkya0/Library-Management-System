@@ -10,10 +10,11 @@ import lombok.Setter;
 
 public class DtoUserIU {
 
-    @NotBlank
-    @Size(min = 2)
-	private String username;
-    @NotBlank
-	private String password;
+    @NotBlank(message = "kullanıcı adı girilmedi")
+    private String username;
+
+    @NotBlank(message = "şifre girilmedi")
+    @Size(min = 6,message = "şifre en az 6 karakterden oluşmalı")
+    private String password;
 
 }

@@ -31,16 +31,25 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleValidationException(MethodArgumentNotValidException e,
                                                               HttpServletRequest request) {
         Map<String, String> errors = new HashMap<>();
+
         for (FieldError fieldError : e.getBindingResult().getFieldErrors()) {
-            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+            String fieldName = fieldError.getField();
+            String errorMessage = fieldError.getDefaultMessage();
+
+            if (errors.containsKey(fieldName)) {
+                errors.put(fieldName, errors.get(fieldName) + ", " + errorMessage);
+            } else {
+                errors.put(fieldName, errorMessage);
+            }
         }
-        ApiError apiError =ApiError.builder()
+        ApiError apiError = ApiError.builder()
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .path(request.getRequestURI())
                 .message("Validation error")
                 .validationErrors(errors)
                 .build();
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 

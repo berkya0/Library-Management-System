@@ -11,18 +11,17 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DtoBookIU {
-    @NotBlank
     @Size(max = 200, message = "Kitap adı 200 karakterden uzun olamaz")
     private String title;
     
-    @NotBlank
+    @NotBlank(message = "kitap yazarı boş olamaz")
     @Size(max = 100, message = "Yazar adı 100 karakterden uzun olamaz")
     private String author;
     
     @NotNull(message = "Yanlış ya da girmeyi unuttun")
     private Category category;
 
-    @NotBlank
+    @NotBlank(message = "ISBN boş olamaz")
     @Size(min=13,max=13,message = "ISBN 13 haneli olmalıdır")
     private String isbnNo;
     

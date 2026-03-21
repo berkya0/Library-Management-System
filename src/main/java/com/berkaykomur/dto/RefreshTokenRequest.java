@@ -2,6 +2,7 @@ package com.berkaykomur.dto;
 
 import java.util.Date;
 
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 
@@ -17,6 +18,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class RefreshTokenRequest {
 
-	@NotEmpty
+	@NotBlank(message = "refresh token girilmedi")
 	private String refreshToken;
 }

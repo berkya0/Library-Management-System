@@ -10,20 +10,22 @@ import lombok.Setter;
 @Setter
 public class RegisterRequest {
 
-		@NotBlank
-		private String username;
-		@NotBlank
-		private String password;
+    @NotBlank(message = "kullanıcı adı boş olamaz!")
+    @Size(min = 2,message = "kullanıcı adı en az 2 karakter içermeli!")
+    private String username;
+    @NotBlank(message = "bir şifre oluşturmalısınız")
+    @Size(min = 6,message = "şifre en az 6 karakterden oluşmalı")
+    private String password;
 
-		@NotBlank
-		private String fullName;
-		
-		@NotBlank
-		@Email
-		private String email; 
-		
-		@NotBlank(message = "Telefon numarası boş olamaz")
-	    @Size(min = 11 ,max = 11,message = "Tel no 11 haneli olmalıdır")
-		private String phoneNumber;
+    @NotBlank(message = "Ad soyad boş olamaz")
+    @Size(max = 100, message = "Ad soyad 100 karakterden uzun olamaz")
+    private String fullName;
 
+    @Email(message = "Geçerli bir email adresi giriniz")
+    @Size(max = 100, message = "Email 100 karakterden uzun olamaz")
+    private String email;
+
+    @NotBlank(message = "telefon numarası girilmelidir")
+    @Size(min = 11, max = 11, message = "Telefon numarası 11 haneli olmalıdır")
+    private String phoneNumber;
 }
