@@ -49,7 +49,7 @@ public class DataInitializer implements CommandLineRunner {
             member2.setPhoneNumber("05055055550");
             member2.setUser(user);
             user.setMember(member2);
-            userRepository.save(user);
+            userRepository.saveAll(List.of(admin,user));
         }
 
         if (bookRepository.count() == 0) {
