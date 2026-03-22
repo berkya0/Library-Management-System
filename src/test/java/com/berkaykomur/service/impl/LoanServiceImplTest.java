@@ -46,6 +46,8 @@ class LoanServiceImplTest {
     private Member mockMember;
     private LoanRequest loanRequest;
     private Loan mockLoan;
+    private Long memberId=10L;
+
 
     @BeforeEach
     void setUp() {
@@ -59,22 +61,22 @@ class LoanServiceImplTest {
 
         loanRequest = new LoanRequest();
         loanRequest.setBookId(1L);
-        loanRequest.setMemberId(10L);
+
     }
 
     @Test
     void loanBook_Success_ShouldReturnDtoLoan() {
 
         when(bookRepository.findById(loanRequest.getBookId())).thenReturn(Optional.of(mockBook));
-        when(memberRepository.findById(loanRequest.getMemberId())).thenReturn(Optional.of(mockMember));
-        when(loanRepository.countOverDueLoans(eq(loanRequest.getMemberId()), any(LocalDate.class))).thenReturn(0);
-        when(loanRepository.countByMemberIdAndReturnDateIsNull(loanRequest.getMemberId())).thenReturn(2);
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(mockMember));
+        when(loanRepository.countOverDueLoans(eq(memberId), any(LocalDate.class))).thenReturn(0);
+        when(loanRepository.countByMemberIdAndReturnDateIsNull(memberId)).thenReturn(2);
 
         Loan savedLoan = new Loan();
         when(loanRepository.save(any(Loan.class))).thenReturn(savedLoan);
         when(loanMapper.toDtoLoan(any(Loan.class))).thenReturn(new DtoLoan());
 
-        DtoLoan result = loanService.loanBook(loanRequest);
+        DtoLoan result = loanService.loanBook(loanRequest,memberId);
 
         assertNotNull(result);
         assertFalse(mockBook.isAvailable());
@@ -90,7 +92,7 @@ class LoanServiceImplTest {
     void loanBook_NoRecordExists_ShouldThrowBaseException() {
         when(bookRepository.findById(loanRequest.getBookId())).thenReturn(Optional.empty());
         BaseException exception=assertThrows(BaseException.class,()->
-                loanService.loanBook(loanRequest));
+                loanService.loanBook(loanRequest,memberId));
         String exceptedError=MessagesType.NO_RECORD_EXIST.getErrorMessage()+" : "+mockBook.getId().toString();
         assertEquals(exceptedError,exception.getMessage());
         assertTrue(mockBook.isAvailable());
@@ -104,7 +106,7 @@ class LoanServiceImplTest {
         mockBook.setAvailable(false);
         when(bookRepository.findById(bookId)).thenReturn(Optional.of(mockBook));
         BaseException exception = assertThrows(BaseException.class, () ->
-                loanService.loanBook(loanRequest)
+                loanService.loanBook(loanRequest,memberId)
         );
         assertEquals(MessagesType.ALREADY_LOANED.getErrorMessage()+" : "+loanRequest.getBookId().toString(),exception.getMessage());
         verifyNoInteractions(memberRepository, loanRepository,loanMapper);
@@ -114,9 +116,9 @@ class LoanServiceImplTest {
     void loanBook_MemberNotFound_ShouldThrowBaseException() {
 
         when(bookRepository.findById(loanRequest.getBookId())).thenReturn(Optional.of(mockBook));
-        when(memberRepository.findById(loanRequest.getMemberId())).thenReturn(Optional.empty());
+        when(memberRepository.findById(memberId)).thenReturn(Optional.empty());
         BaseException exception=assertThrows(BaseException.class,()->
-                loanService.loanBook(loanRequest));
+                loanService.loanBook(loanRequest,memberId));
         String exceptedError=MessagesType.MEMBER_NOT_FOUND.getErrorMessage()+" : "+mockMember.getId().toString();
         assertEquals(exceptedError,exception.getMessage());
         assertTrue(mockBook.isAvailable());
@@ -127,11 +129,11 @@ class LoanServiceImplTest {
     void loanBook_OverDueLimitExceeded_ShouldThrowBaseException() {
       
         when(bookRepository.findById(loanRequest.getBookId())).thenReturn(Optional.of(mockBook));
-        when(memberRepository.findById(loanRequest.getMemberId())).thenReturn(Optional.of(mockMember));
-        when(loanRepository.countOverDueLoans(eq(loanRequest.getMemberId()), any(LocalDate.class))).thenReturn(1);
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(mockMember));
+        when(loanRepository.countOverDueLoans(eq(memberId), any(LocalDate.class))).thenReturn(1);
 
         BaseException baseException= assertThrows(BaseException.class, () ->
-                loanService.loanBook(loanRequest));
+                loanService.loanBook(loanRequest,memberId));
         String exceptedError=MessagesType.OVERDUE_LIMIT_EXCEEDED.getErrorMessage();
         assertEquals(exceptedError,baseException.getMessage());
         verify(loanRepository, never()).countByMemberIdAndReturnDateIsNull(any());
@@ -145,12 +147,12 @@ class LoanServiceImplTest {
     void loanBook_MaxLimitExceeded_ShouldThrowBaseException() {
 
         when(bookRepository.findById(loanRequest.getBookId())).thenReturn(Optional.of(mockBook));
-        when(memberRepository.findById(loanRequest.getMemberId())).thenReturn(Optional.of(mockMember));
-        when(loanRepository.countOverDueLoans(eq(loanRequest.getMemberId()), any(LocalDate.class))).thenReturn(0);
-        when(loanRepository.countByMemberIdAndReturnDateIsNull(loanRequest.getMemberId())).thenReturn(5);
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(mockMember));
+        when(loanRepository.countOverDueLoans(eq(memberId), any(LocalDate.class))).thenReturn(0);
+        when(loanRepository.countByMemberIdAndReturnDateIsNull(memberId)).thenReturn(5);
 
         BaseException baseException= assertThrows(BaseException.class, () ->
-                loanService.loanBook(loanRequest));
+                loanService.loanBook(loanRequest,memberId));
         String exceptedError=MessagesType.MAX_BOOK_LIMIT_EXCEEDED.getErrorMessage()+" : "+
                 "Mevcut kitap sayın: "+5;
         assertEquals(exceptedError,baseException.getMessage());
@@ -173,7 +175,7 @@ class LoanServiceImplTest {
         when(loanRepository.save(any(Loan.class))).thenReturn(existingLoan);
         when(loanMapper.toDtoLoan(any(Loan.class))).thenReturn(new DtoLoan());
 
-        DtoLoan result = loanService.returnBook(loanRequest.getMemberId(), existingLoan.getId());
+        DtoLoan result = loanService.returnBook(memberId, existingLoan.getId());
         assertNotNull(result);
         assertTrue(mockBook.isAvailable());
         assertNotNull(existingLoan.getReturnDate());
@@ -190,7 +192,7 @@ class LoanServiceImplTest {
 
         when(loanRepository.findById(loanId)).thenReturn(Optional.empty());
         BaseException exception=assertThrows(BaseException.class,
-                ()->loanService.returnBook(loanRequest.getMemberId(), loanId));
+                ()->loanService.returnBook(memberId, loanId));
         String exceptedError=MessagesType.NO_RECORD_EXIST.getErrorMessage()+" : "+loanId;
         assertEquals(exceptedError,exception.getMessage());
         assertFalse(mockBook.isAvailable());

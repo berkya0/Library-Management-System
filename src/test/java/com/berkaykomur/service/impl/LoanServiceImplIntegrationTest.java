@@ -56,9 +56,8 @@ class LoanServiceImplIntegrationTest {
     void loanBook_Integration_Success() {
         LoanRequest request = new LoanRequest();
         request.setBookId(bookId);
-        request.setMemberId(memberId);
 
-        DtoLoan result = loanService.loanBook(request);
+        DtoLoan result = loanService.loanBook(request,memberId);
 
         assertNotNull(result);
         assertFalse(bookRepository.findById(bookId).get().isAvailable());
@@ -72,10 +71,9 @@ class LoanServiceImplIntegrationTest {
 
         LoanRequest request = new LoanRequest();
         request.setBookId(book.getId());
-        request.setMemberId(memberId);
 
         BaseException exception = assertThrows(BaseException.class, () ->
-                loanService.loanBook(request)
+                loanService.loanBook(request,memberId)
         );
 
         assertTrue(exception.getMessage().contains(MessagesType.ALREADY_LOANED.getErrorMessage()+" : "+request.getBookId()));
@@ -91,9 +89,7 @@ class LoanServiceImplIntegrationTest {
         memberRepository.save(anotherMember);
         LoanRequest request = new LoanRequest();
         request.setBookId(bookId);
-        request.setMemberId(anotherMember.getId());
-
-        assertThrows(AccessDeniedException.class, () ->loanService.loanBook(request));
+        assertThrows(AccessDeniedException.class, () ->loanService.loanBook(request,anotherMember.getId()));
 
     }
     @Test
