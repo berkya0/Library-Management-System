@@ -25,14 +25,17 @@ public class DatabaseCleanupService {
     public void executeMidnightCleanup() {
 
         try {
-            loanRepository.deleteAll();
-            refreshTokenRepository.deleteAll();
-            bookRepository.deleteAll();
-            userRepository.deleteAll();
+            loanRepository.deleteAllInBatch();
+            refreshTokenRepository.deleteAllInBatch();
+            bookRepository.deleteAllInBatch();
+            userRepository.deleteAllInBatch();
+
             dataInitializer.run();
+            System.out.println("Soft delete kısıtlamaları aşılarak veritabanı sıfırlandı.");
 
 
         } catch (Exception e) {
+            System.out.println("Hata: "+e.getMessage());
             e.printStackTrace();
 
         }
