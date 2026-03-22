@@ -203,14 +203,14 @@ class LoanServiceImplTest {
     void getLoansByMemberId_Success_ShouldReturnLoans() {
         Long memberId=10L;
         List<Loan> mockLoans = List.of(mockLoan, new Loan());
-        when(loanRepository.findByMemberId(memberId)).thenReturn(mockLoans);
+        when(loanRepository.findByMemberIdAndReturnDateIsNull(memberId)).thenReturn(mockLoans);
         when(loanMapper.toDtoLoan(mockLoans)).thenReturn(List.of(new DtoLoan(), new DtoLoan()));
 
         List<DtoLoan> result = loanService.getLoansByMemberId(memberId);
 
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(loanRepository).findByMemberId(memberId);
+        verify(loanRepository).findByMemberIdAndReturnDateIsNull(memberId);
         verify(loanMapper).toDtoLoan(mockLoans);
     }
 
