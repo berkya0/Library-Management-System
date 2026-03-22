@@ -1,12 +1,12 @@
 package com.berkaykomur.dto;
 
 import com.berkaykomur.enums.Role;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 @Getter
 public class UpdateRoleRequest {
-    @NotBlank(message = "rol seçmediniz")
+    @NotNull(message = "rol seçmediniz")
     private Role role;
 
 }

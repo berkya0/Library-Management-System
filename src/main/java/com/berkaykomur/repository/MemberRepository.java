@@ -1,6 +1,7 @@
 package com.berkaykomur.repository;
 
 import com.berkaykomur.model.Member;
+import org.springframework.data.domain.Example;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,5 +16,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
              "and u.username = :username")
 	     Optional<Long> findMemberIdByUsername(@Param("username") String username);
 
- }
+    boolean existsByEmail(String email);
+    boolean existsByPhoneNumber(String phoneNumber);
+}
 

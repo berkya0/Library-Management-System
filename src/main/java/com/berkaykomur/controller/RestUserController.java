@@ -20,10 +20,10 @@ public class RestUserController {
 	public ResponseEntity<DtoUser> updateUser(@Valid @RequestBody DtoUserIU dtoUserIU) {
 		return ResponseEntity.ok(userService.updateUser(dtoUserIU));
 	}
-	@DeleteMapping("/delete/{id}")
+	@DeleteMapping("/delete/{userId}")
     @Operation(summary = "Kullanıcı hesabını sil (ADMIN)", description = "Admin belirtilen ID'ye sahip kullanıcıyı veya kullanıcı kendine bağlı tüm verilerini sistemden kalıcı olarak siler.")
-	public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-	    userService.deleteUserById(id);
+	public ResponseEntity<String> deleteUser(@PathVariable Long userId) {
+	    userService.deleteUserById(userId);
 	    return ResponseEntity.ok("User deleted successfully");
 	}
 

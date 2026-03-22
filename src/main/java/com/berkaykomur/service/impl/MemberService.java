@@ -40,6 +40,12 @@ public class MemberService implements IMemberService {
     public DtoMember updateMemberById(Long memberId, DtoMemberIU dtoMemberIU) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.MEMBER_NOT_FOUND,memberId.toString())));
+        if(memberRepository.existsByEmail(dtoMemberIU.getEmail())){
+            throw new BaseException(new ErrorMessage(MessagesType.EMAIL_ALREADY_TAKEN,dtoMemberIU.getEmail()));
+        }
+        if(memberRepository.existsByPhoneNumber( dtoMemberIU.getPhoneNumber())){
+            throw new BaseException(new ErrorMessage(MessagesType.PHONE_NUMBER_ALREADY_TAKEN,dtoMemberIU.getPhoneNumber()));
+        }
         memberMapper.updateMemberFromDto(dtoMemberIU, member);
         return memberMapper.toDtoMember(memberRepository.save(member));
     }
@@ -50,11 +56,12 @@ public class MemberService implements IMemberService {
     public List<DtoMember> findAllMembers() {
         return memberMapper.toDtoListMember(memberRepository.findAll());
     }
+
     @Override
     @Transactional(readOnly=true)
     @PreAuthorize("#username==authentication.principal.username")
     public DtoMember findMemberByUsername(String username) {
-        User user = userRepository.findByUsernameAndIsActiveTrue(username)
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.USER_NOT_FOUND,username)));
 
         if (user.getMember() == null) {

@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface LoanRepository extends JpaRepository<Loan, Long> {
 
-	  List<Loan> findByMemberId(Long memberId);
+	  List<Loan> findByMemberIdAndReturnDateIsNull(Long memberId);
       int countByMemberIdAndReturnDateIsNull(Long memberId);
 
       @Query("select count(l) from Loan l where l.member.id=:memberId and l.dueDate<:today " +

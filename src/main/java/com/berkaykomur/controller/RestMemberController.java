@@ -22,16 +22,16 @@ public class RestMemberController {
 
     private final IMemberService memberService;
 
-    @GetMapping("/get/{id}")
+    @GetMapping("/get/{memberId}")
     @Operation(summary = "ID ile üye bul", description = "Belirtilen ID numarasına sahip üyenin detaylı bilgilerini getirir.")
-    public ResponseEntity<DtoMember> findMemberById(@PathVariable Long id) {
-        return ResponseEntity.ok(memberService.findMemberById(id));
+    public ResponseEntity<DtoMember> findMemberById(@PathVariable Long memberId) {
+        return ResponseEntity.ok(memberService.findMemberById(memberId));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/update/{memberId}")
     @Operation(summary = "Üye bilgilerini güncelle", description = "Belirli bir üyenin profil bilgilerini (isim, telefon vb.) günceller.")
-    public ResponseEntity<DtoMember> updateMemberById(@PathVariable Long id, @Valid @RequestBody DtoMemberIU dtoMemberIU) {
-        return ResponseEntity.ok(memberService.updateMemberById(id, dtoMemberIU));
+    public ResponseEntity<DtoMember> updateMemberById(@PathVariable Long memberId, @Valid @RequestBody DtoMemberIU dtoMemberIU) {
+        return ResponseEntity.ok(memberService.updateMemberById(memberId, dtoMemberIU));
     }
 
     @GetMapping("/get/list")
@@ -46,10 +46,10 @@ public class RestMemberController {
         return ResponseEntity.ok(memberService.findMemberByUsername(userDetails.getUsername()));
     }
 
-    @PutMapping("/update-role/{id}")
+    @PutMapping("/update-role/{userId}")
     @Operation(summary = "Kullanıcı rolü güncelle (ADMIN)", description = "Bir üyenin yetki seviyesini (USER/ADMIN) değiştirir.")
-    public ResponseEntity<DtoMember> updateMemberRole(@PathVariable Long id,@RequestBody UpdateRoleRequest role) {
-       return ResponseEntity.ok(memberService.updateMemberRole(id, role));
+    public ResponseEntity<DtoMember> updateMemberRole(@PathVariable Long userId,@RequestBody UpdateRoleRequest role) {
+       return ResponseEntity.ok(memberService.updateMemberRole(userId, role));
     }
 }
 

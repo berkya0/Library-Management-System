@@ -35,8 +35,8 @@ public class LoanServiceImpl implements ILoanService {
     
     @Override
     @Transactional
-    @PreAuthorize("#request.memberId==authentication.principal.memberId")
-    public DtoLoan loanBook(LoanRequest request) {
+    @PreAuthorize("#memberId==authentication.principal.memberId")
+    public DtoLoan loanBook(LoanRequest request,Long memberId) {
         Book book = bookRepository.findById(request.getBookId())
             .orElseThrow(() -> new BaseException(
                 new ErrorMessage(MessagesType.NO_RECORD_EXIST,request.getBookId().toString())));
@@ -46,9 +46,9 @@ public class LoanServiceImpl implements ILoanService {
                 new ErrorMessage(MessagesType.ALREADY_LOANED, request.getBookId().toString()));
         }
 
-        Member member = memberRepository.findById(request.getMemberId())
+        Member member = memberRepository.findById(memberId)
             .orElseThrow(() -> new BaseException(
-                new ErrorMessage(MessagesType.MEMBER_NOT_FOUND, request.getMemberId().toString())));
+                new ErrorMessage(MessagesType.MEMBER_NOT_FOUND,memberId.toString())));
 
         int overLoanCount=loanRepository.countOverDueLoans(member.getId(), LocalDate.now());
         if(overLoanCount>0){
@@ -71,7 +71,7 @@ public class LoanServiceImpl implements ILoanService {
     @Transactional(readOnly = true)
     @PreAuthorize("#memberId==authentication.principal.memberId")
     public List<DtoLoan> getLoansByMemberId(Long memberId) {
-        List<Loan> loans = loanRepository.findByMemberId(memberId);
+        List<Loan> loans = loanRepository.findByMemberIdAndReturnDateIsNull(memberId);
        return loanMapper.toDtoLoan(loans);
     }
 

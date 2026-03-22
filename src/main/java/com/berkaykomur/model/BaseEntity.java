@@ -12,7 +12,6 @@ import org.hibernate.annotations.Where;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Where(clause = "is_active=true")
 public abstract class BaseEntity {
 	
 	@Id

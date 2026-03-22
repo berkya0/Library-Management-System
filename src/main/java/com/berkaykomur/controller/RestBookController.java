@@ -24,16 +24,16 @@ public class RestBookController {
 		return ResponseEntity.ok(bookService.findAllBooks());
 	}
 
-	@GetMapping("/get/{id}")
+	@GetMapping("/get/{bookId}")
     @Operation(summary = "ID ile kitap ara", description = "Belirtilen ID'ye sahip kitabın detaylarını getirir.")
-	public ResponseEntity<DtoBook>findBookById(@PathVariable Long id) {
-		return ResponseEntity.ok(bookService.findBookById(id));
+	public ResponseEntity<DtoBook>findBookById(@PathVariable Long bookId) {
+		return ResponseEntity.ok(bookService.findBookById(bookId));
 	}
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/delete/{bookId}")
     @Operation(summary = "Kitap sil (ADMIN)", description = "Belirtilen kitabı sistemden kaldırır. Sadece ADMIN yetkisiyle çalışır.")
-    public ResponseEntity<String> deleteBook(@PathVariable Long id) {
-        bookService.deleteBook(id);
+    public ResponseEntity<String> deleteBook(@PathVariable Long bookId) {
+        bookService.deleteBook(bookId);
         return ResponseEntity.ok("Book deleted successfully");
     }
 	@PostMapping("/save")

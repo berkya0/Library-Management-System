@@ -7,7 +7,7 @@ import com.berkaykomur.dto.LoanRequest;
 
 public interface ILoanService {
 
-    DtoLoan loanBook(LoanRequest request);
+    DtoLoan loanBook(LoanRequest request,Long memberId);
     List<DtoLoan> getLoansByMemberId(Long memberId);
     DtoLoan returnBook(Long memberId, Long loanId);
     List<DtoLoan> getAllLoans();

@@ -11,6 +11,7 @@ import com.berkaykomur.mapper.UserMapper;
 import com.berkaykomur.model.Member;
 import com.berkaykomur.model.RefreshToken;
 import com.berkaykomur.model.User;
+import com.berkaykomur.repository.MemberRepository;
 import com.berkaykomur.repository.RefreshTokenRepository;
 import com.berkaykomur.repository.UserRepository;
 import com.berkaykomur.service.IAuthenticationService;
@@ -41,10 +42,17 @@ public class AuthenticationService implements IAuthenticationService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final MemberRepository memberRepository;
 
     private User createUser(RegisterRequest request) {
-        if (userRepository.existsByUsernameAndIsActiveTrue(request.getUsername())) {
+        if (userRepository.existsByUsername(request.getUsername())) {
             throw new BaseException(new ErrorMessage((MessagesType.USERNAME_ALREADY_TAKEN), request.getUsername()));
+        }
+        if(memberRepository.existsByEmail(request.getEmail())) {
+            throw new BaseException(new ErrorMessage((MessagesType.EMAIL_ALREADY_TAKEN),request.getEmail()));
+        }
+        if(memberRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new BaseException(new ErrorMessage((MessagesType.PHONE_NUMBER_ALREADY_TAKEN),request.getPhoneNumber()));
         }
         User user = new User();
         user.setUsername(request.getUsername());
@@ -77,7 +85,7 @@ public class AuthenticationService implements IAuthenticationService {
 
     @Override
     public AuthResponse refreshToken(RefreshTokenRequest request) {
-        RefreshToken refreshToken = refreshTokenRepository.findByRefreshTokenAndIsActiveTrue(request.getRefreshToken())
+        RefreshToken refreshToken = refreshTokenRepository.findByRefreshToken(request.getRefreshToken())
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessagesType.REFRESH_TOKEN_INVALID, "")));
 
         if (!isRefreshTokenValid(refreshToken.getExpiredDate())) {
