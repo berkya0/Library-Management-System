@@ -1,267 +1,179 @@
-# 📚 Library Management System (Spring Boot)
-A secure and production-ready **Library Management System** built with Spring Boot.
-This project demonstrates **JWT-based authentication**, **role-based authorization**, and a clean **layered REST API architecture**.
+# 📚 Kütüphane Yönetim Sistemi (Spring Boot)
+Spring Boot ile geliştirilmiş, **güvenli ve production-ready bir Kütüphane Yönetim Sistemi**.  
+Bu proje, **JWT tabanlı kimlik doğrulama**, **rol tabanlı yetkilendirme** ve temiz bir **katmanlı REST API mimarisi** sunar.
 
 ---
 
-## 🚀 Features
-* 🔐 JWT-based Authentication & Authorization
-* 👥 Role-based Access Control (ADMIN, USER)
-* 📖 Book Management 
-* 🧑 Member Management
-* 🔄 Loan System (Borrow / Return books)
-* ♻️ Refresh Token Mechanism
+## 🚀 Özellikler
+* 🔐 JWT tabanlı Kimlik Doğrulama & Yetkilendirme
+* 👥 Rol tabanlı Erişim Kontrolü (ADMIN, USER)
+* 📖 Kitap Yönetimi
+* 🧑 Üye Yönetimi
+* 🔄 Ödünç Sistemi (Kitap Alma / İade)
+* ♻️ Refresh Token Mekanizması
 * 🧩 Global Exception Handling
-* 🏗 Clean Layered Architecture (Controller → Service → Repository)
-* 📦 DTO-based Data Transfer
-* 🛡 Spring Security Integration
+* 🏗 Temiz Katmanlı Mimari (Controller → Service → Repository)
+* 📦 DTO tabanlı Veri Transferi
+* 🛡 Spring Security Entegrasyonu
 
-### 🧪 Testing
-* ✅ **Unit Tests** → Business logic tested with JUnit 5 & Mockito
-* 🔐 **Integration Tests** → End-to-end testing of secured API endpoints
----
-
-## 🏛 Project Architecture
-The project follows a clean and maintainable layered architecture:
-
-<img src="images/architecture.png" alt="Architecture" width="700">
+### 🧪 Testler
+* ✅ **Unit Testler** → İş mantığı JUnit 5 & Mockito ile test edildi
+* 🔐 **Integration Testler** → Güvenli API endpointlerinin uçtan uca testleri
 
 ---
 
-## 📂 Package Structure
+## 🏛 Proje Mimarisi
+Proje, temiz ve sürdürülebilir bir katmanlı mimariyi takip eder:
 
-* `config` → Security & application configuration
-* `controller` → REST API endpoints
-* `dto` → Data Transfer Objects
-* `enums` → Role definitions
-* `exception` → Custom exception classes
-* `handler` → Global exception handling
-* `jwt` → JWT filter & token service
-* `mapper` → DTO ↔ Entity mapping
-* `model` → Entity classes
-* `repository` → JPA repositories
-* `service` → Business logic layer
+<img src="images/architecture.png" alt="Mimari" width="700">
 
----
 
-## 🔐 Authentication Flow
-
-1. User registers
-2. User logs in
-3. Server returns:
-
-   * Access Token (JWT)
-   * Refresh Token
-4. Access token is used for protected endpoints
-5. When expired → Refresh token generates a new access token
-
-Security configuration includes:
-
-* `SecurityConfig`
-* `JwtAuthenticationFilter`
-* `JwtService`
-* `CustomUserDetails`
-
----
-
-## 🧠 Roles & Authorization
+## 🧠 Roller & Yetkilendirme
 
 ### ADMIN
-
-* Full access to almost all endpoints
+* Neredeyse tüm endpointlere tam erişim
 
 ### USER
+* Sınırlı erişim
+* Sadece kendi verilerine erişebilir
 
-* Limited access
-* Can only access their own data
-
-**Example:**
-
+**Örnek:**
 ```java
 @PreAuthorize("hasRole('ADMIN') or #request.memberId == authentication.principal.memberId")
 ```
+---
+
+## 📂 Paket Yapısı
+
+- `config` → Güvenlik ve uygulama yapılandırmaları  
+- `controller` → REST API endpoint tanımlamaları  
+- `dto` → Veri transfer objeleri  
+- `enums` → Rol ve sabit tanımlamalar  
+- `exception` → Özel istisna sınıfları  
+- `handler` → Global exception handling ve JWT tabanlı hata yönetimi  
+- `jwt` → JWT token üretimi ve doğrulama işlemleri  
+- `mapper` → Entity ↔ DTO dönüşümleri (MapStruct)  
+- `model` → Entity sınıfları  
+- `repository` → Veri tabanı operasyonları (JPA)  
+- `service` → İş mantığı katmanı
+
+
+## 🎯 Proje Hakında
+
+- 📚 Aktif ödünç kaydı olan kullanıcı silinemez  
+- 🔢 Bir kullanıcı en fazla **5 kitap** ödünç alabilir  
+- 📦 Ödünç alınan kitap iade edilene kadar tekrar alınamaz  
+- ♻️ Soft delete ile veri kaybı engellenir  
+- 🔐 Kullanıcılar sadece kendi verilerine erişebilir  
 
 ---
 
-## 📚 Core Modules
+## 🧠 İş Mantığı ve Kısıtlamalar
 
-### 📖 Book
-* Create book
-* Update book
-* Delete book
-* List all books
+### 🔄 Ödünç Yönetimi (`LoanServiceImpl`)
 
-### 🧑 Member
-* Register member
-* Update member
-* List members
+```java
+private static final int MAX_BOOK_LIMIT = 5;
+```
+| Kısıtlama        | Açıklama                                                          |
+|------------------|-------------------------------------------------------------------|
+| Maksimum kitap   | `countByMemberIdAndReturnDateIsNull()` → limit aşılırsa hata      |
+| Stok kontrolü    | `book.isAvailable()` → ödünçte olan kitap alınamaz                |
+| Stok güncelleme  | `book.setAvailable(false)`                                        |
+| İade             | `book.setAvailable(true)` + `loan.setReturnDate(LocalDate.now())` |
+| Gecikme kontrolü | `countOverDueLoans()`                                             |
 
-### 🔄 Loan
-* Borrow book
-* Return book
-* Track active loans
+
+### 📖 Kitap Yönetimi (`BookServiceImpl`)
+
+- 🔐 Yetkilendirme:
+
+```java
+@PreAuthorize("hasRole('ADMIN')")
+```
+- ❌ Ödünçte olan kitaplar (`isAvailable == false`) silinemez  
+- ♻️ Soft delete uygulanır: `book.setActive(false);`
+
+
+
+### 👤 Kullanıcı Yönetimi (`UserServiceImpl`)
+
+- ❌ Aktif ödünç kaydı varsa kullanıcı silinemez
+- 🔗 Kullanıcı silindiğinde:
+  - Refresh tokenlar silinir
+  - Üyelik pasif hale getirilir (soft delete)
 
 ---
 
-## 🛠 Technologies Used
-* Java 17+
-* Spring Boot
-* Spring Security
-* Spring Data JPA
-* JWT
-* Maven
-* PostgreSQL (configurable)
+### 🔐 Güvenlik Mimarisi (`AuthenticationService`)
+
+- 🔒 Şifreleme: `BCryptPasswordEncoder`
+- 🎟 Token yapısı: Access Token + Refresh Token
+- 🔁 Refresh token rotation
+- ⏱ Dinamik token süresi yönetimi
+
+## 🏗 Mimari
+
+```java
+Controller → Security → Service → Repository
+```
+
+
+## 🚀 Canlı API
+Aşağıdaki linkten projeyi swagger üzerinden canlı test edebilirsiniz
+
+**Swagger:**  
+[Swagger UI](https://library-management-system-1-ej9c.onrender.com/swagger-ui/index.html)
+
+**Health Check:**  
+`/api/health → UP`
+
+
+## ♻️ Sistem Davranışı
+
+- Her 30 dakikada bir → veritabanı sıfırlanır  
+- Örnek veriler otomatik yüklenir  
 
 ---
 
-## ⚙️ How to Run
+## 🛠 Teknolojiler
 
-### 1️⃣ Clone the repository
-```bash
-git clone https://github.com/berkya0/Library-Management-System.git
-```
-
-### 2️⃣ Configure Database
-Update `application.properties`:
-
-```
-spring.datasource.url=jdbc:postgresql://localhost:5432/library
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-```
-
-### 3️⃣ Run the project
-```
-./mvnw spring-boot:run
-```
-or
-```
-mvn spring-boot:run
-```
+- Java 17  
+- Spring Boot 3  
+- Spring Security  
+- Spring Data JPA  
+- PostgreSQL  
+- JWT  
+- Maven  
 
 ---
 
-## 🧪 API Testing
-You can test the API using:
+## 🧪 Test Kullanıcıları
 
-* **Postman** → For sending HTTP requests (GET, POST, PUT, DELETE)
-* **Browser** → For basic authentication flows
-  
-## 📸 API Usage Examples
-
-### 🔐 Authentication – Login
-Authenticate the user and retrieve JWT tokens.
-
-**Request**
-
-```json
-{
-  "username": "berkya",
-  "password": "password123"
-}
-```
-**Response** 
-
-
-<img src="images/authResponse.png" width="600">
+| Rol    | Username | Password   |
+|--------|--------- |------------|
+| ADMIN  | admin1   | admin1231  |
+| ADMIN  | admin2   | admin1232  |
+| ADMIN  | admin3   | admin1233  |
+| USER   | user1    | user1231   |
+| USER   | user2    | user1232   |
+| USER   | user3    | user1233   |
 
 
 ---
-### 🔒 Borrow Book 
-Borror book using a valid access token.
 
-**Request**
+## 🎮 Test
 
-```json
-{
-   "bookId": 7,
-   "memberId": 1
-}
-```
-**Response** 
-
-
-<img src="images/loanResponse.png" width="600">
+1. `/authenticate` endpoint’ine istek at  
+2. Token al  
+3. Swagger → Authorize  
+4. `Bearer <token>` ekle  
+5. Test et  
 
 ---
 
-### ❌ Error Handling Example
+## 👨‍💻 Geliştirici
 
-Example of validation or authorization error response.
+**Berkay Kömür**  [LinkedIn](https://www.linkedin.com/in/berkya)
 
-**Request**
-
-```json
-{
-  "memberId": null,
-  "bookId": 5
-}
-```
-
-**Response** 
-
-
-<img src="images/loanMemberIdError.png" width="600">
-
-
-**Request**
-Not: This member id does not belong current member
-```json
-{
-  "memberId": 5, 
-  "bookId": 5
-}
-```
-
-**Response** 
-
-
-<img src="images/unauthError.png" width="600">
-
-### Authentication
-- POST /rest/api/user/register
-- POST /rest/api/authenticate
-- POST /rest/api/refresh-token
-
-### USER
-- PUT /rest/api/user/update
-- DELETE /rest/api/user/delete/{userId}
-
-### Book
-- GET /rest/book/get/{bookId}
-- GET /rest/api/book/get/list
-- POST /rest/api/book/save (ADMIN)
-- DELETE /rest/api/book/delete/{bookId} (ADMIN)
-
-### Loan
-- POST /rest/api/loan
-- GET /rest/api/loan/my-loans
-- POST /rest/api/loan/return/{loanId}
-- GET /rest/api/loan/all
-
-### Member
-- GET /rest/api/member/get/{memberId}
-- PUT /rest/api/member/update/{memberId}
-- GET /rest/api/member/get/list
-- GET /rest/api/member/me
-- PUT //rest/api/member/update-role/{memberId}
-  
----
-
-## 🎯 What I Practiced
-
-* Designing a secure REST API architecture
-* Implementing JWT authentication from scratch
-* Building a refresh token mechanism
-* Applying role-based & ownership-based authorization
-* Structuring scalable layered architecture
-* Implementing global exception handling
-* Using DTOs for clean API design
-* Securing endpoints with method-level authorization
-
----
-
-## 👨‍💻 Author
-
-**Berkay Kömür**
-Computer Engineering Student | Java & Spring Boot Developer 🚀
+Aspiring Java & Spring Boot Developer 🚀
