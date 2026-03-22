@@ -1,10 +1,7 @@
 package com.berkaykomur.service;
 
 import com.berkaykomur.config.DataInitializer;
-import com.berkaykomur.repository.BookRepository;
-import com.berkaykomur.repository.LoanRepository;
-import com.berkaykomur.repository.RefreshTokenRepository;
-import com.berkaykomur.repository.UserRepository;
+import com.berkaykomur.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -18,16 +15,17 @@ public class DatabaseCleanupService {
     private final BookRepository bookRepository;
     private final LoanRepository loanRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final MemberRepository memberRepository;
     private final DataInitializer dataInitializer;
 
     @Scheduled(cron = "0 */30 * * * *", zone = "Europe/Istanbul")
     @Transactional
-    public void executeMidnightCleanup() {
-
+    public void executeCleanup() {
         try {
             loanRepository.deleteAllInBatch();
             refreshTokenRepository.deleteAllInBatch();
             bookRepository.deleteAllInBatch();
+            memberRepository.deleteAllInBatch();
             userRepository.deleteAllInBatch();
 
             dataInitializer.run();
