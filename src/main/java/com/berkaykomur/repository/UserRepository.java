@@ -18,7 +18,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM loan", nativeQuery = true)
+    @Query(value = "DELETE FROM users", nativeQuery = true)
     void hardDeleteAll();
 
 

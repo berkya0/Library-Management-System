@@ -23,7 +23,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM loan", nativeQuery = true)
+    @Query(value = "DELETE FROM member", nativeQuery = true)
     void hardDeleteAll();
 }
 
