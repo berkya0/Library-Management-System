@@ -22,11 +22,11 @@ public class DatabaseCleanupService {
     @Transactional
     public void executeCleanup() {
         try {
-            loanRepository.deleteAllInBatch();
-            refreshTokenRepository.deleteAllInBatch();
-            bookRepository.deleteAllInBatch();
-            memberRepository.deleteAllInBatch();
-            userRepository.deleteAllInBatch();
+            loanRepository.hardDeleteAll();
+            refreshTokenRepository.hardDeleteAll();
+            bookRepository.hardDeleteAll();
+            memberRepository.hardDeleteAll();
+            userRepository.hardDeleteAll();
 
             dataInitializer.run();
             System.out.println("Soft delete kısıtlamaları aşılarak veritabanı sıfırlandı.");
