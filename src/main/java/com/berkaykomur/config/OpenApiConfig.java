@@ -17,7 +17,7 @@ public class OpenApiConfig {
 
         return new OpenAPI()
                 .info(new Info()
-                        .title("Library Management System API")
+                        .title("Kütüphane Yönetim Sistemi")
                         .version("1.0.0")
                         .contact(new Contact().name("Berkay Kömür").url("https://github.com/berkya0"))
                         .description("### 🚀 Proje Hakkında\n" +
@@ -30,11 +30,20 @@ public class OpenApiConfig {
                                 "  - `USER`: Kitap ödünç alma, kendi ödünç kayıtlarını görme ve profilini güncelleme yetkisine sahiptir.\n" +
                                 "* **Ownership Check:** Kullanıcılar sadece kendi ID'lerine ait olan (admin değilse) kayıtlar üzerinde işlem yapabilir.\n\n" +
                                 "### 🛠 Hızlı Test Bilgileri\n" +
-                                "Veritabanı her gece **00:00'da (GMT+3)** otomatik olarak sıfırlanmakta ve aşağıdaki hesaplar tanımlanmaktadır:\n" +
-                                "| Rol | Username | Password |\n" +
-                                "| :--- | :--- | :--- |\n" +
-                                "| **Admin** | `admin` | `admin123` |\n" +
-                                "| **User** | `user` | `user123` |\n\n" +
+                                "Veritabanı her **30 dakikada bir (GMT+3)** otomatik olarak sıfırlanır ve aşağıdaki test kullanıcıları oluşturulur:\n" +
+                                "### \uD83D\uDC64 Admin Hesapları\n" +
+                                "| Username | Password |\n" +
+                                "| :--- | :--- |\n" +
+                                "| admin1 | admin1231 |\n"+
+                                "| admin2 | admin1232 |\n"+
+                                "| admin3 | admin1233 |\n\n"+
+                                "### \uD83D\uDC64 User Hesapları\n"+
+                                "| Username | Password |\n" +
+                                "| :--- | :--- |\n" +
+                                "| user1 | user1231 |\n"+
+                                "| user2 | user1232 |\n"+
+                                "| user3 | user1233 |\n\n"+
+
                                 "### 📦 Temel Modüller\n" +
                                 "1. **Auth:** Kayıt, giriş ve token yenileme işlemleri.\n" +
                                 "2. **Book:** Kitap envanter yönetimi (CRUD).\n" +

@@ -20,7 +20,7 @@ public class DatabaseCleanupService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final DataInitializer dataInitializer;
 
-    @Scheduled(cron = "0 15 0  * * *", zone = "Europe/Istanbul")
+    @Scheduled(cron = "0 */30 * * * *", zone = "Europe/Istanbul")
     @Transactional
     public void executeMidnightCleanup() {
 
@@ -30,6 +30,7 @@ public class DatabaseCleanupService {
             bookRepository.deleteAll();
             userRepository.deleteAll();
             dataInitializer.run();
+
 
         } catch (Exception e) {
             e.printStackTrace();

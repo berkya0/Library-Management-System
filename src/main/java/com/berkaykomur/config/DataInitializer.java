@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
@@ -24,32 +25,34 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (userRepository.count() == 0) {
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setCreateTime(new Date());
-            admin.setRole(Role.ADMIN);
+            for(int i=1;i<4;i++) {
+                User admin = new User();
+                admin.setUsername("admin"+i);
+                admin.setPassword(passwordEncoder.encode("admin123"+i));
+                admin.setCreateTime(new Date());
+                admin.setRole(Role.ADMIN);
 
-            Member member = new Member();
-            member.setEmail("admin@gmail.com");
-            member.setFullName("Admin Berkay");
-            member.setPhoneNumber("05055055555");
-            member.setUser(admin);
-            admin.setMember(member);
+                Member member = new Member();
+                member.setEmail("admin"+i+"@gmail.com");
+                member.setFullName("Admin"+i+" Berkay");
+                member.setPhoneNumber("0505505555"+i);
+                member.setUser(admin);
+                admin.setMember(member);
 
-            User user = new User();
-            user.setUsername("user");
-            user.setPassword(passwordEncoder.encode("user123"));
-            user.setCreateTime(new Date());
-            user.setRole(Role.USER);
+                User user = new User();
+                user.setUsername("user"+i);
+                user.setPassword(passwordEncoder.encode("user123"+i));
+                user.setCreateTime(new Date());
+                user.setRole(Role.USER);
 
-            Member member2 = new Member();
-            member2.setEmail("user@gmail.com");
-            member2.setFullName("User Berkay");
-            member2.setPhoneNumber("05055055550");
-            member2.setUser(user);
-            user.setMember(member2);
-            userRepository.saveAll(List.of(admin,user));
+                Member member2 = new Member();
+                member2.setEmail("user"+i+"@gmail.com");
+                member2.setFullName("User"+i+" Berkay");
+                member2.setPhoneNumber("050550555"+(i+10));
+                member2.setUser(user);
+                user.setMember(member2);
+                userRepository.saveAll(List.of(admin,user));
+            }
         }
 
         if (bookRepository.count() == 0) {
@@ -77,8 +80,25 @@ public class DataInitializer implements CommandLineRunner {
             book3.setActive(true);
             book3.setCategory(Category.TARİH);
 
-            bookRepository.saveAll(List.of(book1, book3,book2));
+            Book book4 = new Book();
+            book4.setTitle("Atom Karınca");
+            book4.setAuthor("AntMan");
+            book4.setIsbnNo("9786053320123");
+            book4.setAvailable(true);
+            book4.setActive(true);
+            book4.setCategory(Category.BİYOGRAFİ);
+
+            Book book5 = new Book();
+            book5.setTitle("Ketçap Olmak");
+            book5.setAuthor("Tatlı Domatesler");
+            book5.setIsbnNo("9786053320543");
+            book5.setAvailable(true);
+            book5.setActive(true);
+            book5.setCategory(Category.TARİH);
+
+            bookRepository.saveAll(List.of(book1, book5,book2,book3,book4));
         }
 
     }
+
 }
