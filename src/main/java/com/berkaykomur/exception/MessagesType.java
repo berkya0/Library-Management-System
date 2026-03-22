@@ -17,6 +17,8 @@ public enum MessagesType {
     USER_NOT_FOUND("1016","User bulunamadı",HttpStatus.NOT_FOUND),
     USERNAME_OR_PASSWORD_INVALID("1007", "Kullanıcı adı veya şifre geçersiz", HttpStatus.UNAUTHORIZED),
     USERNAME_ALREADY_TAKEN("1025", "Kullanıcı adı alınmış", HttpStatus.CONFLICT),
+    EMAIL_ALREADY_TAKEN("1026","E-mail alınmış", HttpStatus.CONFLICT),
+    PHONE_NUMBER_ALREADY_TAKEN("1027","Bu telefon numarası başkası tarafından kullanılıyor", HttpStatus.CONFLICT),
     MAX_BOOK_LIMIT_EXCEEDED("1012","Maksimum kitap alımına ulaştınız ",HttpStatus.BAD_REQUEST),
     OVERDUE_LIMIT_EXCEEDED("1014","Teslim tarihi geçmiş kitabınız bulunmaktatır kitap alamazsınız",HttpStatus.BAD_REQUEST),
     NO_RECORD_EXIST("1004", "Kayıt bulunamadı", HttpStatus.NOT_FOUND),
